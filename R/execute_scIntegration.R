@@ -2,7 +2,8 @@
 ### [0] Load
 ##########
 
-source("R/functions.R")
+# source("R/integration_functions.R")
+# source("R/evaluation_functions.R")
 singularity_path = "~/Documents/r_scvi_v10.simg"
 
 # direct output and logs to some files on the local filesystem:
@@ -70,13 +71,15 @@ for(i in 1:nrow(dataset_table)){
 
 # Integration depends on 1
 
-# Evaluation depends on 2+3
+# Evaluation depends on 2+3 and coresponding integration run
 
 ##########
 ### [5] Run scVI integration + evaluation
 ##########
 
+# Integration depends on 1
 
+# Evaluation depends on 2+3 and coresponding integration run
 
 
 

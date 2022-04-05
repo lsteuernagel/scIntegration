@@ -4,12 +4,12 @@
 param_list = list()
 
 # must be loaded from params:
-param_list$data_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/"
-param_list$processed_suffix = "_seurat_processed"
+param_list$integration_folder_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_integration_test/"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_integration/"
+#param_list$processed_suffix = "_seurat_processed"
 
 # for final merged object:
-param_list$merged_file = "hypoMap_merged_raw"
-param_list$feature_set_sizes = c(750,1000,1250,1500,2000,2500,3000,4000)
+param_list$merged_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_integration_test/hypoMap_merged_filtered.rds"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
+param_list$feature_set_sizes = c(750,1000,1250,1500,2000,2500,3000)
 
 # signature for evaluation
 param_list$celltype_signature_path = "data/hypothalamus_celltype_signatures.json"
