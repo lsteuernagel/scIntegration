@@ -39,7 +39,7 @@ param_list$target_sub_sample = 38400
 param_list$stepsize = 200
 
 # integration
-param_list$latent_space_sizes = c(50,65,80,95,110,140)
+param_list$latent_space_sizes = c(50,65,80,95,110)
 
 # save
 scUtils::writeList_to_JSON(param_list,filename = "data/parameters_integration_v2_1.json")

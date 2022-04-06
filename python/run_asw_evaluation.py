@@ -82,7 +82,7 @@ for embedding in embedding_names:
         if(len(set(adata.obs[key_name])) >= target_clusterN):
             print(" Reached "+str(len(set(adata.obs[key_name])))+" clusters")
             break
-    # claculate separation on last result
+    # calculate separation on last result
     # see also: https://scikit-learn.org/stable/modules/clustering.html#silhouette-coefficient
     print(" Calculating asw metrics")
     asw_euclidean = sklearn.metrics.silhouette_samples(adata.obsm[embedding], adata.obs[key_name],metric='euclidean')
