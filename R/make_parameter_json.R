@@ -9,16 +9,37 @@ param_list$integration_folder_path = "/beegfs/scratch/bruening_scratch/lsteuerna
 
 # for final merged object:
 param_list$merged_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_integration_test/hypoMap_merged_filtered.rds"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
-param_list$feature_set_sizes = c(750,1000,1250,1500,2000,2500,3000)
 
 # signature for evaluation
-param_list$celltype_signature_path = "data/hypothalamus_celltype_signatures.json"
+param_list$celltype_signature_file = "data/hypothalamus_celltype_signatures.json"
 param_list$genes_to_exclude_file = "data/features_exclude_list.json"
 
-# processing
+# general
 param_list$n_cores = 50
 param_list$id_column = "Cell_ID"
 param_list$global_seed = 123456
+param_list$sample_column = "Sample_ID"
+param_list$batch_var = "Batch_ID"
+param_list$feature_set_sizes = c(750,1000,1250,1500,2000,2500,3000)
+
+
+# aucell
+param_list$auc_max_rank=700
+param_list$block_size=10000
+param_list$alpha=2.5
+param_list$thrP=0.01
+param_list$smallestPopPercent=0.01
+param_list$auc_max_pos_thresh=0.05
+param_list$auc_min_pos_thresh=0.15
+param_list$detected_cells_filename="detected_celltypes.json"
+
+# downsample
+param_list$id_file_name = "downsampled_ids_for_evaluation.json"
+param_list$target_sub_sample = 38400
+param_list$stepsize = 200
+
+# integration
+
 
 # save
 scUtils::writeList_to_JSON(param_list,filename = "data/parameters_integration_v2_1.json")

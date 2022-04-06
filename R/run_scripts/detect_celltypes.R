@@ -26,7 +26,7 @@ features_exclude_list= jsonlite::read_json(parameter_list$genes_to_exclude_file)
 features_exclude_list = lapply(features_exclude_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 # read signatures
-signaturelist = jsonlite::read_json(path = parameter_list$genes_to_exclude_file)
+signaturelist = jsonlite::read_json(path = parameter_list$celltype_signature_file)
 signaturelist = lapply(signaturelist,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 # load seurat
@@ -36,8 +36,8 @@ seurat_merged = readRDS(paste0(parameter_list$data_path,parameter_list$merged_fi
 ### Run AUCEll based function
 ##########
 
-auc_mat_celltypes = map_celltype_signatures2(exprMatrix=seurat_object_raw@assays$RNA@counts,block_size=10000,aucMaxRank_n=parameter_list$auc_max_rank,
-                                             gene_set_list=gene_set_list,min_rowSum=20,global_seed =parameter_list$global_seed)
+auc_mat_celltypes = map_celltype_signatures2(exprMatrix=seurat_merged@assays$RNA@counts,block_size=10000,aucMaxRank_n=parameter_list$auc_max_rank,
+                                             gene_set_list=signaturelist,min_rowSum=10,global_seed =parameter_list$global_seed)
 # save
 data.table::fwrite(data.table::as.data.table(auc_mat_celltypes),file = paste0(parameter_list$mapped_celltypes_auc_file),sep="\t")
 
@@ -71,14 +71,21 @@ merged_masks[merged_masks==2]=1
 # there are a few cells with two max values --> we just take the first
 #length(which(rowSums(merged_masks)>1))
 # get the max celltype for each cell (that is also above threshold)
-max_idx = data.frame(cell_id = rownames(merged_masks),cluster_id = as.character(apply(merged_masks,1,function(x){names(x)[x==1][1]}))) %>% na.omit()
+max_idx = data.frame(Cell_ID = rownames(merged_masks),Signature_CellType = as.character(apply(merged_masks,1,function(x){names(x)[x==1][1]}))) %>% na.omit()
 # put into a list per cluster
-all_mapped_cells = base::split(max_idx$cell_id,f=max_idx$cluster_id) # or: avg_log2fc or fc_mast
+all_mapped_cells = base::split(max_idx$Cell_ID,f=max_idx$Signature_CellType) # or: avg_log2fc or fc_mast
 
 ##########
 ### Save
 ##########
 
-writeList_to_JSON(list_with_rows = all_mapped_cells,filename = parameter_list$mapped_cells_file)
+# save as separate json
+writeList_to_JSON(list_with_rows = all_mapped_cells,filename = paste0(integration_folder_path,parameter_list$detected_cells_filename))
 
-message(Sys.time(),": Finalized celltype mapping")
+## add to seurat:
+tmp_meta = dplyr::left_join(seurat_merged@meta.data,max_idx,by=c("Cell_ID"="Cell_ID"))
+rownames(tmp_meta) = tmp_meta$Cell_ID
+
+saveRDS(paste0(parameter_list$data_path,parameter_list$merged_file))
+
+message(Sys.time(),": Finalized celltype detection")

@@ -40,3 +40,17 @@ merged_seurat = scUtils::identify_variable_features(merged_seurat,
                                                     ignore_genes_vector = features_exclude_list,
                                                     returnSeurat = TRUE,
                                                     seed = parameter_list$global_seed)
+
+feature_sets = merged_seurat@misc$var_features
+
+##########
+### Save
+##########
+
+feature_set_path = paste0(parameter_list$integration_folder_path,"features/")
+system(paste0("mkdir -p ",paste0(feature_set_path)))
+
+scUtils::writeList_to_JSON(feature_sets,filename = paste0(feature_set_path,"feature_sets.json"))
+
+
+
