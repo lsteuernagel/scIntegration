@@ -34,8 +34,8 @@ merged_seurat <- Seurat::NormalizeData(object = merged_seurat,  verbose = F, ass
 # find HVGs
 merged_seurat = scUtils::identify_variable_features(merged_seurat,
                                                     n_hvgs_sizes = parameter_list$feature_set_sizes,
-                                                    batch_var = parameter_list$sample_column,
-                                                    assay_name = "RNA",
+                                                    batch_var = parameter_list$batch_var,
+                                                    assay_name = parameter_list$assay_name,
                                                     method = "vst",
                                                     ignore_genes_vector = features_exclude_list,
                                                     returnSeurat = TRUE,

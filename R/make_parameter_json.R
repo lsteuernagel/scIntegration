@@ -21,7 +21,7 @@ param_list$global_seed = 123456
 param_list$sample_column = "Sample_ID"
 param_list$batch_var = "Batch_ID"
 param_list$feature_set_sizes = c(750,1000,1250,1500,2000,2500,3000)
-
+param_list$assay_name = "RNA"
 
 # aucell
 param_list$auc_max_rank=700
@@ -39,7 +39,7 @@ param_list$target_sub_sample = 38400
 param_list$stepsize = 200
 
 # integration
-
+param_list$latent_space_sizes = c(50,65,80,95,110,140)
 
 # save
 scUtils::writeList_to_JSON(param_list,filename = "data/parameters_integration_v2_1.json")
