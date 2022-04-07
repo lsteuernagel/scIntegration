@@ -20,7 +20,7 @@ parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(
 seurat_merged = readRDS(paste0(parameter_list$data_path,parameter_list$merged_file))
 
 # load feature list
-feature_set_list = jsonlite::read_json(feature_set_file)
+feature_set_list = jsonlite::read_json(parameter_list$feature_set_file)
 # if some fields are lists --> unlist
 feature_set_list = lapply(feature_set_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
@@ -29,8 +29,8 @@ feature_set_list = lapply(feature_set_list,function(x){if(is.list(x)){return(unl
 ##########
 
 # which feature set to use:
-features_to_use = feature_set_list[[paste0(parameter_list$assay_name,".log.", method, ".split_", batch_var, ".features.",parameter_list$feature_set_size)]]
-messsage("Features to use: ",length(features_to_use))
+features_to_use = feature_set_list[[paste0(parameter_list$assay_name,".log.", "vst", ".split_", parameter_list$batch_var, ".features.",parameter_list$feature_set_size)]]
+message("Features to use: ",length(features_to_use))
 
 # run PCA
 seurat_merged = Seurat::RunPCA(seurat_merged,
@@ -40,7 +40,7 @@ seurat_merged = Seurat::RunPCA(seurat_merged,
                                seed.use = parameter_list$global_seed)
 
 # extract DimReduc
-matrix_pca = seurat_merged@reductions[["PCA"]]@cell.embeddings
+matrix_pca = seurat_merged@reductions[["pca"]]@cell.embeddings
 # make list for all desired sizes
 list_with_PCAs = list()
 for(size in as.numeric(parameter_list$latent_space_sizes)){
@@ -55,7 +55,7 @@ for(size in as.numeric(parameter_list$latent_space_sizes)){
 for(size in as.numeric(parameter_list$latent_space_sizes)){
   current_matrix_pca = list_with_PCAs[[size]]
   current_matrix_pca = cbind(Cell_ID=rownames(seurat_merged@meta.data),current_matrix_pca)
-  filename = paste0(parameter_list$output_folder,"PCA_",param_list$batch_var,".",size,".",features_to_use,".txt")
+  filename = paste0(parameter_list$output_folder,"PCA_",parameter_list$batch_var,".",size,".",length(features_to_use),".txt")
   data.table::fwrite(data.table::as.data.table(current_matrix_pca),file=filename,sep="\t",col.names = TRUE)
 }
 

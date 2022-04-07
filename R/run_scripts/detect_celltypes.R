@@ -39,7 +39,7 @@ seurat_merged = readRDS(paste0(parameter_list$data_path,parameter_list$merged_fi
 auc_mat_celltypes = map_celltype_signatures2(exprMatrix=seurat_merged@assays$RNA@counts,block_size=10000,aucMaxRank_n=parameter_list$auc_max_rank,
                                              gene_set_list=signaturelist,min_rowSum=10,global_seed =parameter_list$global_seed)
 # save
-data.table::fwrite(data.table::as.data.table(auc_mat_celltypes),file = paste0(parameter_list$mapped_celltypes_auc_file),sep="\t")
+#data.table::fwrite(data.table::as.data.table(auc_mat_celltypes),file = paste0(parameter_list$mapped_celltypes_auc_file),sep="\t")
 
 ##########
 ### Use matrix and subset to cells based on threshold
@@ -57,7 +57,7 @@ thresholds = apply(auc_mat_celltypes,2,threshold_fun,thrP = parameter_list$thrP,
                    alpha=parameter_list$alpha,auc_max_pos_thresh = parameter_list$auc_max_pos_thresh,auc_min_pos_thresh= parameter_list$auc_min_pos_thresh)
 
 ## multiple auc matrix with gene set lengths (short signatures often have high scores which can distort comparison across signatures)
-auc_mat_celltypes_mult = t(t(auc_mat_celltypes)*sapply(gene_set_list,length))
+auc_mat_celltypes_mult = t(t(auc_mat_celltypes)*sapply(signaturelist,length))
 # for each cells: which celltype scored highest (including the length factor):
 max_val = apply(auc_mat_celltypes_mult,1,function(x){max(x)[1]})
 # build mask with TRUE where max
@@ -80,12 +80,12 @@ all_mapped_cells = base::split(max_idx$Cell_ID,f=max_idx$Signature_CellType) # o
 ##########
 
 # save as separate json
-writeList_to_JSON(list_with_rows = all_mapped_cells,filename = paste0(integration_folder_path,parameter_list$detected_cells_filename))
+writeList_to_JSON(list_with_rows = all_mapped_cells,filename = paste0(parameter_list$integration_folder_path,parameter_list$detected_cells_filename))
 
 ## add to seurat:
 tmp_meta = dplyr::left_join(seurat_merged@meta.data,max_idx,by=c("Cell_ID"="Cell_ID"))
 rownames(tmp_meta) = tmp_meta$Cell_ID
 
-saveRDS(paste0(parameter_list$data_path,parameter_list$merged_file))
+saveRDS(seurat_merged,paste0(parameter_list$data_path,parameter_list$merged_file))
 
 message(Sys.time(),": Finalized celltype detection")

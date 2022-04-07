@@ -28,7 +28,7 @@ map_celltype_signatures2 = function(exprMatrix,block_size=10000,aucMaxRank_n,gen
 
   # get levels to split matrix
   if(ncol(exprMatrix)/block_size > 1){
-    cut_levels = as.character(cut(1:ncol(exprMatrix),ncol(exprMatrix)/block_size))
+    cut_levels = as.character(cut(1:ncol(exprMatrix),ceiling(ncol(exprMatrix)/block_size)))
     cut_levels_unique = unique(as.character(cut_levels))
   }else{
     cut_levels = rep("1",ncol(exprMatrix))
@@ -362,12 +362,12 @@ evaluate_mixing_rf = function(seurat_object_metadata,integration_files,integrati
       if(returnCollapsed){
         classProb_entropy_norm = data.frame(mixing = apply(classProb_entropy_norm,2,median),reduction=as.character(names(apply(classProb_entropy_norm,2,median))))
       }
-      data.table::fwrite(classProb_entropy_norm, file = evaluation_file, sep ="\t")
+      data.table::fwrite(classProb_entropy_norm, file = evaluation_file, sep ="\t",append = TRUE)
     }else{
       if(returnCollapsed){
         classProb_entropy = data.frame(mixing = apply(classProb_entropy,2,median),reduction=as.character(names(apply(classProb_entropy,2,median))))
       }
-      data.table::fwrite(classProb_entropy, file = evaluation_file, sep ="\t")
+      data.table::fwrite(classProb_entropy, file = evaluation_file, sep ="\t",append = TRUE)
     }
   }
 }
@@ -428,3 +428,153 @@ classProb = function(train_predictors,train_response,trees=500,sampsize_pct=0.63
   return(list(entropy = entropy, entropy_norm = entropy_norm))
 }
 
+##########
+### check_evaluation_results
+##########
+
+#' Which integration results are already evaluated
+#' @param evaluation_file_path where to look for full evaluation file
+#' @param integration_res_path where to look for integration files
+
+check_evaluation_results = function(evaluation_file_path,integration_res_path){
+
+  message("Running check_evaluation_results.")
+  # read all files with integration results
+  all_files=list.files(integration_res_path,recursive = TRUE,pattern = ".txt")
+
+  # if a global evaluation file exists:
+  if(file.exists(evaluation_file_path)){
+    message("Found file, removing integration results that are already present...")
+    # read all evaluation results and extract colnames
+    evaluation_file = data.table::fread(evaluation_file_path,data.table = F)#readRDS(evaluation_file_path)
+    if(grepl("asw",evaluation_file_path)){
+      message("Detected asw keyword")
+      all_evaluations = as.character(evaluation_file[,1])
+    }else if(grepl("separation",evaluation_file_path)){
+      message("Detected separation keyword")
+      all_evaluations = as.character(evaluation_file[,"embedding"])
+    }else{
+      message("Using colnames")
+      all_evaluations = colnames(evaluation_file)
+    }
+    # reformat all_files to be comparable
+    available_integrations= gsub(".txt","",all_files)
+    available_integrations = as.character(sapply(available_integrations,function(x){ strsplit(x,split = "/")[[1]][length(strsplit(x,split = "/")[[1]])]}))
+    # which files are NOT in global evaluation file
+    not_yet_evaluated = all_files[!available_integrations %in% all_evaluations]
+  }else{
+    # evaluate all files
+    not_yet_evaluated=all_files
+  }
+  return(not_yet_evaluated)
+
+}
+
+##########
+### merge_evaluation_results
+##########
+
+#' Merge individual evaluation results into one file. With the current pipeline reset_file should be TRUE.
+#' @param evaluation_file_path where to look for files that should be merged
+#' @param type_string what type of evaluation result: 'evaluation_mixing_prob', 'evaluation_mixing_probNorm', evaluation_purity_prob
+#' @param reset_file overwrite existing file
+#' @return the filename with all results
+
+merge_evaluation_results = function(evaluation_file_path,type_string,expected_ntrees="",expected_seed="",expected_clusters="",expected_n_celltypes="",reset_file=TRUE){
+
+  message("Running merge_evaluation_results")
+  message("Warning: This function expect a defined order in the filenames from the evaluation pipeline, which makes it unflexible when changing file names in the mains scripts!")
+
+  ### if this function is not working check that expected_ntrees and expected_seed are included in the call!!!! ####
+
+  # find all relevant files
+  all_eval_files = list.files(evaluation_file_path,pattern=paste0(type_string,"\\."))
+  # exclude summary files
+  all_eval_files = all_eval_files[!grepl("_all.txt",all_eval_files)]
+  # print(length(all_eval_files))
+  # add together
+  message("Found ",length(all_eval_files)," files. Load and add together")
+  tmp_list=list()
+  cc = 1
+  for(i in 1:length(all_eval_files)){
+    name_details = strsplit(all_eval_files[i],split = "\\.")[[1]]
+    if(type_string %in% c("evaluation_mixing_prob","evaluation_purity_prob","evaluation_mixing_probNorm","evaluation_purity_rmse","evaluation_purity_rmse_norm") & name_details[4] == expected_ntrees & name_details[6] == expected_seed){
+      name_with_file = all_eval_files[i]
+      tmp_list[[cc]] = data.table::fread(paste0(evaluation_file_path,all_eval_files[i]),data.table = F)
+      cc = cc+1
+    }else if(type_string %in% c("evaluation_asw","evaluation_entropy_knn_all","evaluation_separation")){
+      name_with_file = all_eval_files[i]
+      tmp_list[[cc]] = data.table::fread(paste0(evaluation_file_path,all_eval_files[i]),data.table = F)
+      cc = cc+1
+    }else if(type_string %in% c("evaluation_purity_knn","evaluation_entropy_knn") & name_details[3] == expected_n_celltypes ){
+      name_with_file = all_eval_files[i]
+      tmp_list[[cc]] = data.table::fread(paste0(evaluation_file_path,all_eval_files[i]),data.table = F)
+      cc = cc+1
+    }else if(type_string %in% c("purity_perBatch_cluster") & name_details[3] == expected_clusters ){
+      name_with_file = all_eval_files[i]
+      tmp_list[[cc]] = data.table::fread(paste0(evaluation_file_path,all_eval_files[i]),data.table = F)
+      cc = cc+1
+    }
+    # tmp_list[[i]] = utils::read.table(paste0(evaluation_file_path,all_eval_files[i]),col.names = TRUE,row.names = FALSE)
+  }
+  # print(length(tmp_list))
+
+  message("Define file name")
+  name_details = strsplit(name_with_file,split = "\\.")[[1]]
+  if(grepl("asw|separation",type_string)){
+    # when using silhouette score files
+    tmp_mat = do.call(rbind,tmp_list)
+    full_file_name = paste0(evaluation_file_path,type_string,".",paste0(name_details[2:4],collapse = "."),"_all.txt")
+  }else if(grepl("purity_knn",type_string)){
+    tmp_mat = do.call(cbind,tmp_list)
+    full_file_name = paste0(evaluation_file_path,type_string,".",paste0(name_details[3:5],collapse = "."),"_all.txt")
+  }else if(grepl("entropy_knn",type_string)){
+    tmp_mat = do.call(cbind,tmp_list)
+    full_file_name = paste0(evaluation_file_path,type_string,".",paste0(name_details[3:5],collapse = "."),"_all.txt")
+  }else if(grepl("evaluation_entropy_knn_all",type_string)){
+    tmp_mat = do.call(cbind,tmp_list)
+    full_file_name = paste0(evaluation_file_path,type_string,".",paste0(name_details[3:5],collapse = "."),"_all.txt")
+  }else if(grepl("purity_perBatch_cluster",type_string)){
+    tmp_mat = do.call(cbind,tmp_list)
+    full_file_name = paste0(evaluation_file_path,type_string,".",paste0(name_details[3:4],collapse = "."),"_all.txt")
+  }else{
+    # when using other file
+    tmp_mat = do.call(cbind,tmp_list)
+    full_file_name = paste0(evaluation_file_path,type_string,".",paste0(name_details[3:6],collapse = "."),"_all.txt")
+  }
+  #  print(dim(tmp_mat))
+  # check if file exists, filename contains length(cells_sets) ntrees and the seed used, so if this changes a new file will be created
+  message("Saving merged file")
+  if(!file.exists(full_file_name)|reset_file){
+    message("Saving all results in new file: ",full_file_name)
+    utils::write.table(as.data.frame(tmp_mat),file = full_file_name,sep =  "\t",col.names = TRUE,row.names = FALSE,quote = FALSE)
+  }else{
+    previous_results = data.table::fread(full_file_name,data.table = F)
+    if(grepl("asw",type_string)){
+      # when using silhouette score files
+      if(ncol(previous_results)!=ncol(tmp_mat)){
+        # throw error here?
+        warning("Different number of cols. Not adding new results")
+        updated_results=previous_results
+      }else{
+        # else cbind
+        print("rg")
+        updated_results = rbind(previous_results,tmp_mat)
+      }
+    }else{
+      # when using other files
+      if(nrow(previous_results)!=nrow(tmp_mat)){
+        # throw error here?
+        warning("Different number of rows. Not adding new results")
+        updated_results=previous_results
+      }else{
+        # else cbind
+        updated_results = cbind(previous_results,tmp_mat)
+      }
+    }
+    message("Adding results to new file: ",full_file_name)
+    utils::write.table(as.data.frame(updated_results),file = full_file_name,sep =  "\t",col.names = TRUE,row.names = FALSE,quote = FALSE)
+  }
+  return(full_file_name)
+
+}
