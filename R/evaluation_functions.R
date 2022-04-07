@@ -275,7 +275,7 @@ evaluate_mixing_knn = function(seurat_object_metadata,batch_var="Batch_ID",k_par
 
 #' Wrapper that runs random forest based evaluation of embeddings for mixing.
 #' @param seurat_object_metadata metadata associated with the mapped celltypes and emebdding that will be evaluated
-#' @param integration_files names of files that contain embeddings
+#' @param integration_names names of embeddings
 #' @param integration_path directory where to find integration_files
 #' @param evaluation_file filename where to store results
 #' @param batch_var name of column in metadata
@@ -290,40 +290,26 @@ evaluate_mixing_knn = function(seurat_object_metadata,batch_var="Batch_ID",k_par
 #' @param global_seed seed
 #' @return Nothing. Writes files
 
-evaluate_mixing_rf = function(seurat_object_metadata,integration_files,integration_path,evaluation_file,batch_var,subset_cell_ids=NULL,ntrees,sampsize_pct,ncores,scale_to_max,returnNormalized=TRUE,returnCollapsed =TRUE,max_for_norm,global_seed){
+evaluate_mixing_rf = function(seurat_object_metadata,integration_names,integration_path,evaluation_file,batch_var,subset_cell_ids=NULL,ntrees,sampsize_pct,ncores,scale_to_max,returnNormalized=TRUE,returnCollapsed =TRUE,max_for_norm,global_seed){
 
   # check that files can be found at integration path
-  message("meta_data ",dim(seurat_object_metadata)[1])
-  # make names
-  #   split_filepath = sapply(integration_files,function(x){as.character(strsplit(x,split = "/")[[1]])})
-  integration_to_run=c()
-  for( j in 1:length(integration_files)){
-    current_file = as.character(integration_files[j])
-    #message(current_file)
-    split_filepath = as.character(base::strsplit(current_file,split = "\\/")[[1]])
-    if(length(split_filepath)>1){
-      current_file = gsub(".txt","",split_filepath[length(split_filepath)])
-    }else{
-      current_file = gsub(".txt","",current_file)
-    }
-    integration_to_run = c(integration_to_run,current_file)
-  }
+  #message("meta_data ",dim(seurat_object_metadata)[1])
+
   # prepare other info
   batch_labels = as.character(seurat_object_metadata[,batch_var])
-  message("check nas ",any(is.na(batch_labels)))
 
   #init result lists
   classProb_entropy_list = list()
   classProb_entropy_norm_list = list()
 
   # run classProb on all missing results
-  if(length(integration_to_run)>0){
-    for(i in 1:length(integration_to_run)){
+  if(length(integration_names)>0){
+    for(i in 1:length(integration_names)){
       # get current result
-      current_name = gsub(".txt","",integration_to_run[i])
-      current_file = integration_files[which(grepl(paste0(integration_to_run[i],".txt"),integration_files))]
-      current_embedding = read_embedding(paste0(integration_path,current_file),seurat_object_metadata=seurat_object_metadata)
-      message("Rownames" ,length(rownames(current_embedding))," ",rownames(current_embedding)[1]," ")
+      current_name = integration_names[i] #gsub(".txt","",integration_to_run[i])
+      current_file = list.files(path = integration_path,full.names = TRUE,recursive = TRUE,pattern = current_name)
+      current_embedding = read_embedding(current_file,seurat_object_metadata=seurat_object_metadata)
+
       # set cell names --> assumes that the order of cells in metadata is the same as in embedding!
       if(!is.null(subset_cell_ids)){
         idx = which(rownames(current_embedding) %in% subset_cell_ids)
@@ -332,6 +318,9 @@ evaluate_mixing_rf = function(seurat_object_metadata,integration_files,integrati
       }else{
         batch_labels_subset = batch_labels
       }
+      # message(">>>>length batch_labels_subset: ",length(batch_labels_subset))
+      # message(">>>>dim current_embedding: ",dim(current_embedding)[1],"   ",dim(current_embedding)[2])
+      # message("sampsize_pct: ",sampsize_pct," |ncores: ",ncores," |ntrees: ",ntrees, "  |max_for_norm: ",max_for_norm)
       # entropy on class probabilities
       message(Sys.time(),"Evaluating ",current_name)
       classProb_temp= classProb(train_predictors=current_embedding,
@@ -360,12 +349,12 @@ evaluate_mixing_rf = function(seurat_object_metadata,integration_files,integrati
     if(returnNormalized){
       # optionally collapse to median
       if(returnCollapsed){
-        classProb_entropy_norm = data.frame(mixing = apply(classProb_entropy_norm,2,median),reduction=as.character(names(apply(classProb_entropy_norm,2,median))))
+        classProb_entropy_norm = data.frame(value = apply(classProb_entropy_norm,2,median),reduction=as.character(names(apply(classProb_entropy_norm,2,median))))
       }
       data.table::fwrite(classProb_entropy_norm, file = evaluation_file, sep ="\t",append = TRUE)
     }else{
       if(returnCollapsed){
-        classProb_entropy = data.frame(mixing = apply(classProb_entropy,2,median),reduction=as.character(names(apply(classProb_entropy,2,median))))
+        classProb_entropy = data.frame(value = apply(classProb_entropy,2,median),reduction=as.character(names(apply(classProb_entropy,2,median))))
       }
       data.table::fwrite(classProb_entropy, file = evaluation_file, sep ="\t",append = TRUE)
     }
@@ -404,12 +393,13 @@ classProb = function(train_predictors,train_response,trees=500,sampsize_pct=0.63
   require(randomForest)
   require(foreach)
   require(doParallel)
-  require(doRNG)
+ # require(doRNG)
   # length of current_labels
   n_batches = length(unique(train_response))
   # run random forest
+  message("ncores: ",ncores)
   registerDoParallel(cores=ncores)
-  registerDoRNG(seed = global_seed)
+  #registerDoRNG(seed = global_seed)
   rf_res <- foreach(ntree=rep(trees/ncores, ncores), .combine=randomForest::combine,.multicombine=TRUE, .packages='randomForest') %dopar% {
     randomForest(x=train_predictors, y=as.factor(train_response), ntree=ntree,sampsize=ceiling(sampsize_pct*nrow(train_predictors)))
   }
@@ -426,155 +416,4 @@ classProb = function(train_predictors,train_response,trees=500,sampsize_pct=0.63
     entropy = entropy / log2(ncol(votes))
   }
   return(list(entropy = entropy, entropy_norm = entropy_norm))
-}
-
-##########
-### check_evaluation_results
-##########
-
-#' Which integration results are already evaluated
-#' @param evaluation_file_path where to look for full evaluation file
-#' @param integration_res_path where to look for integration files
-
-check_evaluation_results = function(evaluation_file_path,integration_res_path){
-
-  message("Running check_evaluation_results.")
-  # read all files with integration results
-  all_files=list.files(integration_res_path,recursive = TRUE,pattern = ".txt")
-
-  # if a global evaluation file exists:
-  if(file.exists(evaluation_file_path)){
-    message("Found file, removing integration results that are already present...")
-    # read all evaluation results and extract colnames
-    evaluation_file = data.table::fread(evaluation_file_path,data.table = F)#readRDS(evaluation_file_path)
-    if(grepl("asw",evaluation_file_path)){
-      message("Detected asw keyword")
-      all_evaluations = as.character(evaluation_file[,1])
-    }else if(grepl("separation",evaluation_file_path)){
-      message("Detected separation keyword")
-      all_evaluations = as.character(evaluation_file[,"embedding"])
-    }else{
-      message("Using colnames")
-      all_evaluations = colnames(evaluation_file)
-    }
-    # reformat all_files to be comparable
-    available_integrations= gsub(".txt","",all_files)
-    available_integrations = as.character(sapply(available_integrations,function(x){ strsplit(x,split = "/")[[1]][length(strsplit(x,split = "/")[[1]])]}))
-    # which files are NOT in global evaluation file
-    not_yet_evaluated = all_files[!available_integrations %in% all_evaluations]
-  }else{
-    # evaluate all files
-    not_yet_evaluated=all_files
-  }
-  return(not_yet_evaluated)
-
-}
-
-##########
-### merge_evaluation_results
-##########
-
-#' Merge individual evaluation results into one file. With the current pipeline reset_file should be TRUE.
-#' @param evaluation_file_path where to look for files that should be merged
-#' @param type_string what type of evaluation result: 'evaluation_mixing_prob', 'evaluation_mixing_probNorm', evaluation_purity_prob
-#' @param reset_file overwrite existing file
-#' @return the filename with all results
-
-merge_evaluation_results = function(evaluation_file_path,type_string,expected_ntrees="",expected_seed="",expected_clusters="",expected_n_celltypes="",reset_file=TRUE){
-
-  message("Running merge_evaluation_results")
-  message("Warning: This function expect a defined order in the filenames from the evaluation pipeline, which makes it unflexible when changing file names in the mains scripts!")
-
-  ### if this function is not working check that expected_ntrees and expected_seed are included in the call!!!! ####
-
-  # find all relevant files
-  all_eval_files = list.files(evaluation_file_path,pattern=paste0(type_string,"\\."))
-  # exclude summary files
-  all_eval_files = all_eval_files[!grepl("_all.txt",all_eval_files)]
-  # print(length(all_eval_files))
-  # add together
-  message("Found ",length(all_eval_files)," files. Load and add together")
-  tmp_list=list()
-  cc = 1
-  for(i in 1:length(all_eval_files)){
-    name_details = strsplit(all_eval_files[i],split = "\\.")[[1]]
-    if(type_string %in% c("evaluation_mixing_prob","evaluation_purity_prob","evaluation_mixing_probNorm","evaluation_purity_rmse","evaluation_purity_rmse_norm") & name_details[4] == expected_ntrees & name_details[6] == expected_seed){
-      name_with_file = all_eval_files[i]
-      tmp_list[[cc]] = data.table::fread(paste0(evaluation_file_path,all_eval_files[i]),data.table = F)
-      cc = cc+1
-    }else if(type_string %in% c("evaluation_asw","evaluation_entropy_knn_all","evaluation_separation")){
-      name_with_file = all_eval_files[i]
-      tmp_list[[cc]] = data.table::fread(paste0(evaluation_file_path,all_eval_files[i]),data.table = F)
-      cc = cc+1
-    }else if(type_string %in% c("evaluation_purity_knn","evaluation_entropy_knn") & name_details[3] == expected_n_celltypes ){
-      name_with_file = all_eval_files[i]
-      tmp_list[[cc]] = data.table::fread(paste0(evaluation_file_path,all_eval_files[i]),data.table = F)
-      cc = cc+1
-    }else if(type_string %in% c("purity_perBatch_cluster") & name_details[3] == expected_clusters ){
-      name_with_file = all_eval_files[i]
-      tmp_list[[cc]] = data.table::fread(paste0(evaluation_file_path,all_eval_files[i]),data.table = F)
-      cc = cc+1
-    }
-    # tmp_list[[i]] = utils::read.table(paste0(evaluation_file_path,all_eval_files[i]),col.names = TRUE,row.names = FALSE)
-  }
-  # print(length(tmp_list))
-
-  message("Define file name")
-  name_details = strsplit(name_with_file,split = "\\.")[[1]]
-  if(grepl("asw|separation",type_string)){
-    # when using silhouette score files
-    tmp_mat = do.call(rbind,tmp_list)
-    full_file_name = paste0(evaluation_file_path,type_string,".",paste0(name_details[2:4],collapse = "."),"_all.txt")
-  }else if(grepl("purity_knn",type_string)){
-    tmp_mat = do.call(cbind,tmp_list)
-    full_file_name = paste0(evaluation_file_path,type_string,".",paste0(name_details[3:5],collapse = "."),"_all.txt")
-  }else if(grepl("entropy_knn",type_string)){
-    tmp_mat = do.call(cbind,tmp_list)
-    full_file_name = paste0(evaluation_file_path,type_string,".",paste0(name_details[3:5],collapse = "."),"_all.txt")
-  }else if(grepl("evaluation_entropy_knn_all",type_string)){
-    tmp_mat = do.call(cbind,tmp_list)
-    full_file_name = paste0(evaluation_file_path,type_string,".",paste0(name_details[3:5],collapse = "."),"_all.txt")
-  }else if(grepl("purity_perBatch_cluster",type_string)){
-    tmp_mat = do.call(cbind,tmp_list)
-    full_file_name = paste0(evaluation_file_path,type_string,".",paste0(name_details[3:4],collapse = "."),"_all.txt")
-  }else{
-    # when using other file
-    tmp_mat = do.call(cbind,tmp_list)
-    full_file_name = paste0(evaluation_file_path,type_string,".",paste0(name_details[3:6],collapse = "."),"_all.txt")
-  }
-  #  print(dim(tmp_mat))
-  # check if file exists, filename contains length(cells_sets) ntrees and the seed used, so if this changes a new file will be created
-  message("Saving merged file")
-  if(!file.exists(full_file_name)|reset_file){
-    message("Saving all results in new file: ",full_file_name)
-    utils::write.table(as.data.frame(tmp_mat),file = full_file_name,sep =  "\t",col.names = TRUE,row.names = FALSE,quote = FALSE)
-  }else{
-    previous_results = data.table::fread(full_file_name,data.table = F)
-    if(grepl("asw",type_string)){
-      # when using silhouette score files
-      if(ncol(previous_results)!=ncol(tmp_mat)){
-        # throw error here?
-        warning("Different number of cols. Not adding new results")
-        updated_results=previous_results
-      }else{
-        # else cbind
-        print("rg")
-        updated_results = rbind(previous_results,tmp_mat)
-      }
-    }else{
-      # when using other files
-      if(nrow(previous_results)!=nrow(tmp_mat)){
-        # throw error here?
-        warning("Different number of rows. Not adding new results")
-        updated_results=previous_results
-      }else{
-        # else cbind
-        updated_results = cbind(previous_results,tmp_mat)
-      }
-    }
-    message("Adding results to new file: ",full_file_name)
-    utils::write.table(as.data.frame(updated_results),file = full_file_name,sep =  "\t",col.names = TRUE,row.names = FALSE,quote = FALSE)
-  }
-  return(full_file_name)
-
 }

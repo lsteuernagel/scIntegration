@@ -35,11 +35,21 @@ param_list$detected_cells_filename="detected_celltypes.json"
 
 # downsample
 param_list$id_file_name = "downsampled_ids_for_evaluation.json"
-param_list$target_sub_sample = 38400
+param_list$target_sub_sample = 5000#38400
 param_list$stepsize = 200
 
 # integration
 param_list$latent_space_sizes = c(50,65,80,95,110)
+
+# evaluation:
+param_list$ntrees_mixing = 5000#30000
+param_list$sampsize_pct = 0.3333
+param_list$max_for_norm = 0.01
+param_list$k_param = 20
+## asw
+param_list$start_res_asw = 5
+param_list$end_res_asw = 15
+param_list$n_neighbors_asw = param_list$k_param
 
 # save
 scUtils::writeList_to_JSON(param_list,filename = "data/parameters_integration_v2_1.json")

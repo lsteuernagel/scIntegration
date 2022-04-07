@@ -21,5 +21,12 @@
   "id_file_name": "downsampled_ids_for_evaluation.json",
   "target_sub_sample": 5000,
   "stepsize": 200,
-  "latent_space_sizes": [50, 65, 80, 95, 110]
+  "latent_space_sizes": [50, 65, 80, 95, 110],
+  "ntrees_mixing": 5000,
+  "sampsize_pct": 0.3333,
+  "max_for_norm": 0.01,
+  "k_param": 20,
+  "start_res_asw": 5,
+  "end_res_asw": 15,
+  "n_neighbors_asw": 20
 }
