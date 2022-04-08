@@ -30,7 +30,7 @@ signaturelist = jsonlite::read_json(path = parameter_list$celltype_signature_fil
 signaturelist = lapply(signaturelist,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 # load seurat
-seurat_merged = readRDS(paste0(parameter_list$data_path,parameter_list$merged_file))
+seurat_merged = readRDS(paste0(parameter_list$merged_file))
 
 ##########
 ### Run AUCEll based function
@@ -86,6 +86,6 @@ writeList_to_JSON(list_with_rows = all_mapped_cells,filename = paste0(parameter_
 tmp_meta = dplyr::left_join(seurat_merged@meta.data,max_idx,by=c("Cell_ID"="Cell_ID"))
 rownames(tmp_meta) = tmp_meta$Cell_ID
 
-saveRDS(seurat_merged,paste0(parameter_list$data_path,parameter_list$merged_file))
+#saveRDS(seurat_merged,paste0(parameter_list$integration_folder_path,parameter_list$merged_file))
 
 message(Sys.time(),": Finalized celltype detection")

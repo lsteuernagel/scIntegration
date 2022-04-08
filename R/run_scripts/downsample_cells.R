@@ -21,7 +21,7 @@ features_exclude_list= jsonlite::read_json(parameter_list$genes_to_exclude_file)
 features_exclude_list = lapply(features_exclude_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 # load seurat
-seurat_merged = readRDS(paste0(parameter_list$data_path,parameter_list$merged_file))
+seurat_merged = readRDS(paste0(parameter_list$merged_file)) #parameter_list$integration_folder_path,
 seurat_metadata = seurat_merged@meta.data
 
 ##########

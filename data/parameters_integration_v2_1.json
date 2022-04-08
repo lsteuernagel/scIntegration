@@ -12,7 +12,7 @@
   "assay_name": "RNA",
   "auc_max_rank": 700,
   "block_size": 10000,
-  "alpha": 2.5,
+  "alpha": 1.5,
   "thrP": 0.01,
   "smallestPopPercent": 0.01,
   "auc_max_pos_thresh": 0.05,
@@ -26,7 +26,9 @@
   "sampsize_pct": 0.3333,
   "max_for_norm": 0.01,
   "k_param": 20,
+  "dist_type": "cosine",
+  "subset_cells": true,
+  "target_clusterN": 60,
   "start_res_asw": 5,
-  "end_res_asw": 15,
-  "n_neighbors_asw": 20
+  "end_res_asw": 15
 }

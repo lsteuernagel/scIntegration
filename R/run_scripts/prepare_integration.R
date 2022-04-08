@@ -19,11 +19,11 @@ features_exclude_list= jsonlite::read_json(parameter_list$genes_to_exclude_file)
 features_exclude_list = lapply(features_exclude_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 # load seurat
-seurat_merged = readRDS(paste0(parameter_list$data_path,parameter_list$merged_file))
+seurat_merged = readRDS(paste0(parameter_list$merged_file))
 
 #get metadata and save
 seurat_metadata = seurat_merged@meta.data
-data.table::fwrite(x = seurat_metadata,file = paste0(parameter_list$data_path,gsub(".rds","_metadata.txt",parameter_list$merged_file)),sep = "\t")
+data.table::fwrite(x = seurat_metadata,file = paste0(parameter_list$integration_folder_path,gsub(".rds","_metadata.txt",parameter_list$merged_file)),sep = "\t")
 
 ##########
 ### Export to anndata
@@ -33,7 +33,7 @@ seurat_merged@assays[["RNA"]]@var.features = character()
 seurat_merged@assays[["RNA"]]@scale.data <- dummy[,-1] # error is okay
 
 # make file name
-merged_file_name = paste0(parameter_list$data_path,gsub(".rds","",parameter_list$merged_file))
+merged_file_name = paste0(parameter_list$integration_folder_path,gsub(".rds","",parameter_list$merged_file))
 
 # save h5seurat
 SeuratDisk::SaveH5Seurat(object = seurat_merged,filename = paste0(merged_file_name,".h5seurat"), overwrite = TRUE, verbose = TRUE)

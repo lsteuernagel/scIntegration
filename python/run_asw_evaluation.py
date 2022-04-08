@@ -27,19 +27,20 @@ json_str = json_file.read()
 parameter_dict = json.loads(json_str)
 
 # general params from dict (could also save these lines, but I think this way it is easier to digest)
-batch=parameter_dict["batch"]
-data_filepath = parameter_dict["data_filepath"]
-integration_results_path = parameter_dict["integration_results_path"]
-evaluation_results_path = parameter_dict["evaluation_results_path"]
+batch=parameter_dict["batch_var"]
+integration_folder_path = parameter_dict["integration_folder_path"]
+merged_file_h5ad = parameter_dict["merged_file_h5ad"]
+integration_results_path = parameter_dict["integration_res_path"]
+evaluation_file = parameter_dict["evaluation_file"]
 global_seed = parameter_dict["global_seed"]
-embedding_names = parameter_dict["embedding_names"]
+embedding_names = parameter_dict["integration_names"]
 target_clusterN = parameter_dict["target_clusterN"]
 id_file_name = parameter_dict["id_file_name"] 
 subset_cells = parameter_dict["subset_cells"] 
 job_id = parameter_dict["job_id"]
-start_res = parameter_dict["start_res"]
-end_res = parameter_dict["end_res"]
-n_neighbors = parameter_dict["n_neighbors"]
+start_res = parameter_dict["start_res_asw"]
+end_res = parameter_dict["end_res_asw"]
+n_neighbors = parameter_dict["k_param"]
 
 #define resolution range, hardcoded atm
 # start_res=1
@@ -47,12 +48,24 @@ n_neighbors = parameter_dict["n_neighbors"]
 resolutions = [x*0.5 for x in range(2*start_res, 2*end_res+1)]
 
 # read adata
-adata = sc.read_h5ad(data_filepath)
+adata = sc.read_h5ad(merged_file_h5ad)
+#ensure there are no bytestrings 
+str_df = adata.obs
+str_df = str_df.applymap(lambda x: x.decode() if isinstance(x, bytes) else x)
+str_df = str_df.set_index('Cell_ID',drop=False)
+adata.obs = str_df
+# for features:
+str_df = adata.var
+str_df = str_df.applymap(lambda x: x.decode() if isinstance(x, bytes) else x)
+str_df = str_df.set_index('features',drop=False)
+adata.var = str_df
 
 # read id file name and subset if wanted
 if subset_cells:
-  all_cells = pd.read_csv(id_file_name,skip_blank_lines=True,header=None)
-  cell_ids = all_cells[0].to_list()
+  #all_cells = pd.read_csv(integration_folder_path+id_file_name,skip_blank_lines=True,header=None)
+  json_file = open(integration_folder_path+id_file_name)
+  cell_ids = json.load(json_file)
+  cell_ids = cell_ids['cell_ids']
   adata = adata[cell_ids, :].copy()
   print("subsetted to "+str(adata.n_obs))
 
@@ -69,6 +82,8 @@ for embedding in embedding_names:
     if subset_cells:
       df=df.loc[cell_ids]
     adata.obsm[embedding] = df.to_numpy()
+    print(str(df.shape[0]))
+    print(str(adata.obsm[embedding].shape[0]))
     # run pp.neighbors
     print(" Finding neighbor graph")
     sc.pp.neighbors(adata, n_neighbors=n_neighbors, n_pcs=df.shape[1],use_rep=embedding,key_added=embedding,random_state=global_seed)
@@ -92,7 +107,7 @@ for embedding in embedding_names:
     print(" Calculating davies_bouldin_score")
     davies_bouldin_score = sklearn.metrics.davies_bouldin_score(adata.obsm[embedding], adata.obs[key_name])
     # add last result:
-    add = pd.DataFrame({'embedding' : [embedding], 
+    add = pd.DataFrame({'reduction' : [embedding], 
                             'resolution' : [res], 
                             'n_clusters' : [len(set(adata.obs[key_name]))], 
                             'silhouette_score_euclidean' : [asw_euclidean.mean()], 
@@ -105,17 +120,8 @@ for embedding in embedding_names:
 # set index
 asw_all.index = list(range(0, asw_all.shape[0], 1))  
 
-# when not breaking the for loop (slower) but potntially closer to target_clusterN:
-# select result with target nclusters 
-# groups = asw_all.groupby(by=['embedding'])
-# subset_rows = groups.apply(lambda g: g[g['n_clusters'] >= min(g['n_clusters'].max(),target_clusterN)])
-# subset_rows.index = list(range(0, subset_rows.shape[0], 1))  
-# groups2 = subset_rows.groupby(by=['embedding'])
-# subset_rows2 = groups2.apply(lambda g: g[g['resolution'] == g['resolution'].min()])
-# subset_rows2.to_csv(evaluation_results_path+"evaluation_asw."+batch+"."+str(target_clusterN)+"."+str(global_seed)+"."+job_id+".txt", sep='\t',index=True)
-
-# save results 
-asw_all.to_csv(evaluation_results_path+"evaluation_separation."+batch+"."+str(target_clusterN)+"."+str(global_seed)+"."+job_id+".txt", sep='\t',index=True)
+# save results by appending to existing file ---> create file first!
+asw_all.to_csv(evaluation_file, sep='\t',index=False, mode='a', header=False)
 
 print("Finalized ASW evaluation job.")
 

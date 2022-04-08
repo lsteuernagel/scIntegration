@@ -76,7 +76,7 @@ slurm_id_1 = stringr::str_remove(output_message,pattern = "Submitted batch job "
 
 # set params
 param_set = params_integration
-param_set$mapped_celltypes_auc_file
+#param_set$mapped_celltypes_auc_file
 # make unique id:
 job_id=digest::digest(param_set)
 # write to JSON as transfer file
@@ -181,7 +181,7 @@ for(i in 1:length(params_integration$feature_set_sizes)){
   param_set = params_integration
   param_set$feature_set_size = params_integration$feature_set_sizes[i]
   param_set$output_folder = integration_scvi_folder
-  param_set$data_filepath_full = gsub(".rds",".h5ad",param_set$merged_file) # TODO
+  param_set$data_filepath_full = gsub(".rds",".h5ad",param_set$merged_file)
   param_set$feature_set_file = paste0(params_integration$integration_folder_path,"features/feature_sets.json")
   param_set$hvgs_set_name = paste0(params_integration$assay_name,".log.", "vst", ".split_", params_integration$batch_var, ".features.",params_integration$feature_set_sizes[i])
   param_set$categorical_covariates = c("Dataset",param_set$batch_var) #character(0) # c("inferred_sex"), # need to pass batch var here !

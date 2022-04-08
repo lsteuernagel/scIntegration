@@ -105,52 +105,43 @@ read_embedding = function(filename_withpath,seurat_object=NULL,seurat_object_met
 
 #' Wrapper that runs kNN based evaluation of embeddings for celltype purity.
 #' @param seurat_object_metadata metadata associated with the mapped celltypes and emebdding that will be evaluated
-#' @param cells_sets list of vectors (per mapped celltypes) with celllabels matching rownames of metadata
-#' @param k_param cell ids of subset that is used for evaluation
-#' @param control_size_factor_max
-#' @param integration_files names of files that contain embeddings
+#' @param integration_names names of embeddings
 #' @param integration_path directory where to find integration_files
 #' @param evaluation_file filename where to store results
+#' @param cells_sets list of vectors (per mapped celltypes) with celllabels matching rownames of metadata
+#' @param id_column column in metadata with cell ids
+#' @param k_param cell ids of subset that is used for evaluation
+#' @param control_size_factor_max
 #' @param ncores how many cores to use by doParallel
 #' @param dist_type all batches with a probability > max_for_norm are considered when normalizing
 #' @param global_seed seed
 #' @return Nothing. Writes files
 
-evaluate_purity_knn = function(seurat_object_metadata,cells_sets,k_param=20,integration_files,integration_path,evaluation_file,ncores=1,dist_type="cosine",global_seed=123){
+evaluate_purity_knn = function(seurat_object_metadata,integration_names,integration_path,evaluation_file,cells_sets,id_column="Cell_ID",k_param=20,ncores=1,dist_type="cosine",global_seed=123){
   # load
   require(randomForest)
   require(foreach)
   require(doParallel)
-  require(doRNG)
-  # check that files can be found at integration path
-  # make names
-  integration_to_run=c()
-  for( j in 1:length(integration_files)){
-    current_file = as.character(integration_files[j])
-    split_filepath = as.character(strsplit(current_file,split = "/")[[1]])
-    if(length(split_filepath)>1){
-      current_file = gsub(".txt","",split_filepath[length(split_filepath)])
-    }else{
-      current_file = gsub(".txt","",current_file)
-    }
-    integration_to_run = c(integration_to_run,current_file)
-  }
+ # require(doRNG)
   #init result lists
   celltype_purity_knn_list = list()
   # parallel
   registerDoParallel(cores=ncores)
-  doRNG::registerDoRNG(seed = global_seed)
-  res_par_1 <- foreach(embed_idx = 1:length(integration_to_run), .combine='cbind') %dopar% {
+ # doRNG::registerDoRNG(seed = global_seed)
+  res_par_1 <- foreach(embed_idx = 1:length(integration_names), .combine='cbind') %dopar% {
     # get current result
-    current_name = gsub(".txt","",integration_to_run[embed_idx])
-    message(current_name)
-    current_file = integration_files[which(grepl(paste0(integration_to_run[embed_idx],".txt"),integration_files))][1]
-    current_embedding = read_embedding(paste0(integration_path,current_file),seurat_object_metadata = seurat_object_metadata)
+    current_name = integration_names[embed_idx]
+    current_file = list.files(path = integration_path,full.names = TRUE,recursive = TRUE,pattern = current_name)[1]
+    current_embedding = read_embedding(current_file,seurat_object_metadata=seurat_object_metadata)
     current_embedding = as.matrix(current_embedding)
+
+    # only use cell sets with more than 3 cells detected:
+    cells_sets=cells_sets[sapply(cells_sets,length)>3]
+
     ## knn based:
     ## get all neighbors
-    message("Start NN")
     n_dim=ncol(current_embedding)
+    message("Start NN with: nrow current_embedding: ",nrow(current_embedding),"  | n_dim: ",n_dim,"  | k_param: ",k_param+1,"  | dist_type: ",dist_type)
     neighbor_dists = run_seurat_annoy_manually(current_embedding,dim=n_dim,k=k_param+1,metric=dist_type)
     #neighbor_dists = run_seurat_annoy_manually(current_embedding,dim=20,k=20+1,metric="cosine")
     nn_idx=neighbor_dists$nn.idx
@@ -160,7 +151,7 @@ evaluate_purity_knn = function(seurat_object_metadata,cells_sets,k_param=20,inte
     # for all cell types --> ids in cells_sets must correspond to rownames
     for(j in 1:length(cells_sets)){
       # which idx are in given cell set
-      pos_idx = which(seurat_object_metadata$Cell_ID %in% cells_sets[[j]])
+      pos_idx = which(seurat_object_metadata[,id_column] %in% cells_sets[[j]])
       ## subset of cells belonging to cell types
       pos_nn_idx = nn_idx[pos_idx,2:ncol(nn_idx)]
       # set to 1 if neighbor is also in cell types, 0 otherwise
@@ -175,10 +166,12 @@ evaluate_purity_knn = function(seurat_object_metadata,cells_sets,k_param=20,inte
     all_occ_scores
   }
   message(paste0(dim(res_par_1)))
-  colnames(res_par_1) = integration_to_run
+  colnames(res_par_1) = integration_names
+  # convert to long
+  output_df = as.data.frame(res_par_1) %>% dplyr::mutate(celltype = rownames(res_par_1)) %>% tidyr::gather(key="reduction",value="value",-celltype)
   # save updated files
   message("Saving results to files.")
-  data.table::fwrite(as.data.frame(res_par_1),file = evaluation_file,sep =  "\t")
+  data.table::fwrite(as.data.frame(output_df),file = evaluation_file,sep =  "\t")
 }
 
 ##########
@@ -187,86 +180,74 @@ evaluate_purity_knn = function(seurat_object_metadata,cells_sets,k_param=20,inte
 
 #' Wrapper that runs kNN based evaluation of embeddings for mixing.
 #' @param seurat_object_metadata metadata associated with the mapped celltypes and emebdding that will be evaluated
-#' @param cells_sets list of vectors (per mapped celltypes) with celllabels matching rownames of metadata
-#' @param k_param cell ids of subset that is used for evaluation
-#' @param control_size_factor_max
-#' @param integration_files names of files that contain embeddings
+#' @param integration_names names of embeddings
 #' @param integration_path directory where to find integration_files
 #' @param evaluation_file filename where to store results
+#' @param batch_var batch_var
+#' @param k_param cell ids of subset that is used for evaluation
+#' @param control_size_factor_max ...
 #' @param ncores how many cores to use by doParallel
 #' @param dist_type all batches with a probability > max_for_norm are considered when normalizing
+#' @param returnCollapsed take median to reduce to one number per inetgration ?
 #' @param global_seed seed
 #' @return Nothing. Writes files
 
-evaluate_mixing_knn = function(seurat_object_metadata,batch_var="Batch_ID",k_param=20,integration_files,integration_path,evaluation_file,ncores=1,dist_type="cosine",global_seed=123){
+evaluate_mixing_knn = function(seurat_object_metadata,integration_names,integration_path,evaluation_file,batch_var="Batch_ID",k_param=20,ncores=1,dist_type="cosine",returnCollapsed=TRUE,global_seed=123){
 
   require(randomForest)
   require(foreach)
   require(doParallel)
-  require(doRNG)
-  message("evaluate_knn_entropy")
-  # check that files can be found at integration path
-
-  # make names
-  #   split_filepath = sapply(integration_files,function(x){as.character(strsplit(x,split = "/")[[1]])})
-  integration_to_run=c()
-  for( j in 1:length(integration_files)){
-    current_file = as.character(integration_files[j])
-    split_filepath = as.character(strsplit(current_file,split = "/")[[1]])
-    if(length(split_filepath)>1){
-      current_file = gsub(".txt","",split_filepath[length(split_filepath)])
-    }else{
-      current_file = gsub(".txt","",current_file)
-    }
-    integration_to_run = c(integration_to_run,current_file)
-  }
+  #require(doRNG)
+  message("evaluate_mixing_knn")
   #init result lists
   celltype_purity_knn_list = list()
-  #celltypeProb_purity_norm_list  = list()
-  # run classProb on all missing results
-  #for(i in 1:length(integration_to_run)){
   # parallel
   registerDoParallel(cores=ncores)
-  doRNG::registerDoRNG(seed = global_seed)
-  #for(embed_idx in 1:2){
-  res_par_1 <- foreach(embed_idx = 1:length(integration_to_run), .combine='cbind') %dopar% {
+  # doRNG::registerDoRNG(seed = global_seed)
+
+  res_par_1 <- foreach(embed_idx = 1:length(integration_names), .combine='cbind') %dopar% {
     # get current result
-    current_name = gsub(".txt","",integration_to_run[embed_idx])
-    message(current_name)
-    current_file = integration_files[which(grepl(paste0(integration_to_run[embed_idx],".txt"),integration_files))][1]
-    # message(">>>>>",paste0(integration_path,current_file))
-    current_embedding = read_embedding(paste0(integration_path,current_file),seurat_object_metadata = seurat_object_metadata)
+    current_name = integration_names[embed_idx]
+    current_file = list.files(path = integration_path,full.names = TRUE,recursive = TRUE,pattern = current_name)[1]
+    current_embedding = read_embedding(current_file,seurat_object_metadata=seurat_object_metadata)
     current_embedding = as.matrix(current_embedding)
-    # set cell names --> assumes that the order of cells in metadata is the same as in embedding!
-    #rownames(current_embedding) = rownames(seurat_object_metadata)
 
     ## knn based:
     ## get all neighbors
-    message("Start NN")
     n_dim=ncol(current_embedding)
+    message("Start NN with: nrow current_embedding: ",nrow(current_embedding),"  | n_dim: ",n_dim,"  | k_param: ",k_param+1,"  | dist_type: ",dist_type)
     neighbor_dists = run_seurat_annoy_manually(current_embedding,dim=n_dim,k=k_param+1,metric=dist_type)
-    #neighbor_dists = run_seurat_annoy_manually(current_embedding,dim=20,k=20+1,metric="cosine")
     nn_idx=neighbor_dists$nn.idx
     message("Built NN")
-
+    # get all labels based on batch variable
     cell_labels = as.character(seurat_object_metadata[,batch_var])
-
+    # drop the source cells
     pos_nn_idx = nn_idx[,2:ncol(nn_idx)] # get idx for current cells
-    entropy = apply(pos_nn_idx,1,function(row,cell_labels){ # run entropy on batch distribution for celltype cells
+    #  run entropy on batch distribution for celltype cells
+    entropy = apply(pos_nn_idx,1,function(row,cell_labels){
       freq_batch = table(cell_labels[row])/length(cell_labels[row])
       freq_batch = freq_batch[freq_batch > 0]
       entropy = entropy_fun(freq_batch,logfun ="log2")
       entropy
     }, cell_labels = cell_labels)
-    all_entropy_scores = entropy / max(1,log2(length(unique(cell_labels)))) # normalize by this number so that max entropy =1
+    # normalize by log2(length(unique(cell_labels))) so that max entropy =1
+    all_entropy_scores = entropy / max(1,log2(length(unique(cell_labels))))
     all_entropy_scores
   }
-  message(paste0(dim(res_par_1)))
-  colnames(res_par_1) = integration_to_run
-  # save updated files
-  message("Saving results to files.")
-  data.table::fwrite(as.data.frame(res_par_1),file =  evaluation_file,sep =  "\t")
 
+  # after parallel execution:
+  message(paste0(dim(res_par_1)))
+  colnames(res_par_1) = integration_names
+
+  # only write normalized OR raw
+  # optionally collapse to median
+  if(returnCollapsed){
+    output_df = data.frame(value = apply(as.data.frame(res_par_1),2,median),
+                           reduction=as.character(names(apply(as.data.frame(res_par_1),2,median))))
+    data.table::fwrite(output_df, file = evaluation_file, sep ="\t",append = TRUE)
+  }else{
+    data.table::fwrite(as.data.frame(res_par_1),file =  evaluation_file,sep =  "\t")
+  }
 }
 
 ##########
@@ -307,7 +288,7 @@ evaluate_mixing_rf = function(seurat_object_metadata,integration_names,integrati
     for(i in 1:length(integration_names)){
       # get current result
       current_name = integration_names[i] #gsub(".txt","",integration_to_run[i])
-      current_file = list.files(path = integration_path,full.names = TRUE,recursive = TRUE,pattern = current_name)
+      current_file = list.files(path = integration_path,full.names = TRUE,recursive = TRUE,pattern = current_name)[1]
       current_embedding = read_embedding(current_file,seurat_object_metadata=seurat_object_metadata)
 
       # set cell names --> assumes that the order of cells in metadata is the same as in embedding!
@@ -393,7 +374,7 @@ classProb = function(train_predictors,train_response,trees=500,sampsize_pct=0.63
   require(randomForest)
   require(foreach)
   require(doParallel)
- # require(doRNG)
+  # require(doRNG)
   # length of current_labels
   n_batches = length(unique(train_response))
   # run random forest
