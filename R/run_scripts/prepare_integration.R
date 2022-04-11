@@ -23,7 +23,7 @@ seurat_merged = readRDS(paste0(parameter_list$merged_file))
 
 #get metadata and save
 seurat_metadata = seurat_merged@meta.data
-data.table::fwrite(x = seurat_metadata,file = paste0(parameter_list$integration_folder_path,gsub(".rds","_metadata.txt",parameter_list$merged_file)),sep = "\t")
+data.table::fwrite(x = seurat_metadata,file = paste0(parameter_list$integration_folder_path,paste0(parameter_list$new_name_suffix,"_metadata.txt")),sep = "\t")
 
 ##########
 ### Export to anndata
@@ -33,7 +33,7 @@ seurat_merged@assays[["RNA"]]@var.features = character()
 seurat_merged@assays[["RNA"]]@scale.data <- dummy[,-1] # error is okay
 
 # make file name
-merged_file_name = paste0(parameter_list$integration_folder_path,gsub(".rds","",parameter_list$merged_file))
+merged_file_name = paste0(parameter_list$integration_folder_path,parameter_list$new_name_suffix)
 
 # save h5seurat
 SeuratDisk::SaveH5Seurat(object = seurat_merged,filename = paste0(merged_file_name,".h5seurat"), overwrite = TRUE, verbose = TRUE)

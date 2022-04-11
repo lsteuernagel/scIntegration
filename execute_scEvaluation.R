@@ -79,7 +79,7 @@ for(i in 1:length(cut_levels)){
   param_set$integration_names = integrations_to_evaluate[which(cut_values==cut_levels[i])]
   param_set$integration_res_path = paste0(param_set$integration_folder_path,"integration/")
   param_set$evaluation_file = evaluation_mixingrf_file
-  param_set$seurat_merged_metadata = gsub(".rds","_metadata.txt",param_set$merged_file)
+  param_set$seurat_merged_metadata = paste0(parameter_list$integration_folder_path,param_set$new_name_suffix,"_metadata.txt")
 
   # make unique id:
   job_id=digest::digest(param_set)
@@ -146,7 +146,7 @@ for(i in 1:length(cut_levels)){
   param_set$integration_names = integrations_to_evaluate[which(cut_values==cut_levels[i])]
   param_set$integration_res_path = paste0(param_set$integration_folder_path,"integration/")
   param_set$evaluation_file = evaluation_mixingknn_file
-  param_set$seurat_merged_metadata = gsub(".rds","_metadata.txt",param_set$merged_file)
+  param_set$seurat_merged_metadata = paste0(parameter_list$integration_folder_path,param_set$new_name_suffix,"_metadata.txt")
 
   # make unique id:
   job_id=digest::digest(param_set)
@@ -213,7 +213,7 @@ for(i in 1:length(cut_levels)){
   param_set$integration_names = integrations_to_evaluate[which(cut_values==cut_levels[i])]
   param_set$integration_res_path = paste0(param_set$integration_folder_path,"integration/")
   param_set$evaluation_file = evaluation_purityknn_file
-  param_set$seurat_merged_metadata = gsub(".rds","_metadata.txt",param_set$merged_file)
+  param_set$seurat_merged_metadata = paste0(parameter_list$integration_folder_path,param_set$new_name_suffix,"_metadata.txt")
 
   # make unique id:
   job_id=digest::digest(param_set)
@@ -286,8 +286,7 @@ for(i in 1:length(cut_levels)){
   param_set$integration_names = integrations_to_evaluate[which(cut_values==cut_levels[i])]
   param_set$integration_res_path = paste0(param_set$integration_folder_path,"integration/")
   param_set$evaluation_file = evaluation_purityasw_file
-  param_set$merged_file_h5ad = gsub(".rds",".h5ad",param_set$merged_file)
- # param_set$seurat_merged_metadata = gsub(".rds","_metadata.txt",param_set$merged_file)
+  param_set$merged_file_h5ad = paste0(parameter_list$integration_folder_path,param_set$new_name_suffix,".h5ad")
 
   # make unique id:
   job_id=digest::digest(param_set)

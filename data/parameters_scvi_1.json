@@ -1,9 +1,8 @@
 {
   "n_layers": [2, 3, 4],
   "n_hidden": [128, 256],
-  "n_latent": [50, 65, 80, 95, 110],
   "dropout_rate": [0.01, 0.05, 0.1],
-  "max_epochs": [20, 50, 100, 150, 200, 300, 400],
+  "max_epochs": [50, 100, 150, 200, 300, 400],
   "dispersion": "gene",
   "gene_likelihood": "zinb",
   "early_stopping": false

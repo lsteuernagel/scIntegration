@@ -39,7 +39,7 @@ seurat_merged = readRDS(paste0(parameter_list$merged_file))
 auc_mat_celltypes = map_celltype_signatures2(exprMatrix=seurat_merged@assays$RNA@counts,block_size=10000,aucMaxRank_n=parameter_list$auc_max_rank,
                                              gene_set_list=signaturelist,min_rowSum=10,global_seed =parameter_list$global_seed)
 # save
-#data.table::fwrite(data.table::as.data.table(auc_mat_celltypes),file = paste0(parameter_list$mapped_celltypes_auc_file),sep="\t")
+data.table::fwrite(data.table::as.data.table(auc_mat_celltypes),file = paste0(parameter_list$auc_backup_file),sep="\t")
 
 ##########
 ### Use matrix and subset to cells based on threshold
@@ -86,6 +86,5 @@ writeList_to_JSON(list_with_rows = all_mapped_cells,filename = paste0(parameter_
 tmp_meta = dplyr::left_join(seurat_merged@meta.data,max_idx,by=c("Cell_ID"="Cell_ID"))
 rownames(tmp_meta) = tmp_meta$Cell_ID
 
-#saveRDS(seurat_merged,paste0(parameter_list$integration_folder_path,parameter_list$merged_file))
 
 message(Sys.time(),": Finalized celltype detection")
