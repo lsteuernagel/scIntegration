@@ -28,7 +28,7 @@ param_list$assay_name = "RNA"
 # aucell
 param_list$auc_max_rank=700
 param_list$block_size=10000
-param_list$alpha=2
+param_list$alpha=1.5
 param_list$thrP=0.01
 param_list$smallestPopPercent=0.01
 param_list$auc_max_pos_thresh=0.05
@@ -41,7 +41,7 @@ param_list$target_sub_sample = 38700
 param_list$stepsize = 200
 
 # integration
-param_list$scvi_models_to_test = 100 # depends on the number of the models in scvi arg list
+param_list$scvi_models_to_test = 30 # depends on the number of the models in scvi arg list
 param_list$latent_space_sizes = c(50,65,80,95,110,140)
 
 # evaluation:
@@ -52,9 +52,9 @@ param_list$k_param = 20
 param_list$dist_type = "cosine"
 ## asw
 param_list$subset_cells = TRUE
-param_list$target_clusterN = 150
+param_list$target_clusterN = 200
 param_list$start_res_asw = 5
 param_list$end_res_asw = 15
 
 # save
-scUtils::writeList_to_JSON(param_list,filename = "data/parameters_integration_v2_2.json")
+scUtils::writeList_to_JSON(param_list,filename = "data/parameters_integration_v2_3.json")

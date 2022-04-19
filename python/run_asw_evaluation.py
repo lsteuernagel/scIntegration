@@ -9,6 +9,7 @@ import sklearn
 import os
 import sys
 import json
+import gc
 
 # find file helper
 def find(pattern, path):
@@ -73,6 +74,9 @@ if subset_cells:
 #init df
 asw_all = pd.DataFrame(columns=['embedding','resolution','n_clusters','silhouette_score_euclidean','silhouette_score_cosine','calinski_harabasz','davies_bouldin'])
 
+# clean up
+gc.collect()
+
 # read all files
 for embedding in embedding_names:
     print("embedding: "+embedding)
@@ -117,6 +121,8 @@ for embedding in embedding_names:
                        })
     #batch_silhouette_score' : [asw_batch[0]['silhouette_score'].mean()]})
     asw_all = asw_all.append(add)
+    # clean up
+    gc.collect()
 # set index
 asw_all.index = list(range(0, asw_all.shape[0], 1))  
 

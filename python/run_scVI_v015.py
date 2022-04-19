@@ -13,6 +13,7 @@ import sys
 import json
 #import re
 import scvi
+import gc
 from os import listdir
 from os.path import isfile, join
 
@@ -75,6 +76,9 @@ print("Copy raw into .X")
 adata.X = adata.raw.X.copy()
 adata = adata[:, hvgs]
 
+# clean up
+gc.collect()
+
 ## Run scVI
 # https://www.scvi-tools.org/en/stable/user_guide/notebooks/harmonization.html
 print("Preparing scVI")
@@ -125,6 +129,8 @@ for index, row in param_df.iterrows():
                   str(float(row['dropout_rate']))+"_"+str(int(row['n_layers']))+"_"+
                   str(int(row['n_hidden']))+"_"+str(row['dispersion'])+"_"+str(row['gene_likelihood'])+"_cov"+str(length_cov)+
                   "..scVI.."+str(int(row['n_latent']))+".."+hvgs_set_name+"_"+job_id+".txt", sep='\t',index=True)
+    # clean up
+    gc.collect()
                   
 ## End of for
 print("Finalized scVI runs")

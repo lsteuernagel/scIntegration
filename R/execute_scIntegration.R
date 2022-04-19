@@ -13,7 +13,7 @@ param_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_par
 log_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_slurmlogs/"
 
 # load json file with all other information
-params_integration = jsonlite::read_json("data/parameters_integration_v2_2.json")
+params_integration = jsonlite::read_json("data/parameters_integration_v2_3.json")
 # if some fields are lists --> unlist
 params_integration = lapply(params_integration,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
@@ -160,34 +160,46 @@ system(paste0("mkdir -p ",paste0(integration_scvi_folder)))
 # start one job per latent space set size
 slurm_id_5_per_size = vector()
 
+# read scvi params from json
+scVI_fullarg_list = jsonlite::read_json("data/parameters_scvi_3.json")
+# make a param data frame
+scvi_full_param_df = scVI_fullarg_list %>% purrr::cross_df()
+#subsample to random subset
+if(nrow(scvi_full_param_df) > as.numeric(params_integration$scvi_models_to_test)){
+  set.seed(params_integration$global_seed)
+  param_df_random = scvi_full_param_df[sample(nrow(scvi_full_param_df),params_integration$scvi_models_to_test),]
+}else{
+  param_df_random = scvi_full_param_df
+}
+
+total_param_df = do.call(rbind,sapply(params_integration$feature_set_sizes,function(x,df){
+  df$feature_set_sizes = x
+  return(as.data.frame(df))
+},df=param_df_random,simplify = F))
+
+param_df_id=digest::digest(total_param_df)
+data.table::fwrite(total_param_df,paste0(param_path,param_df_id,"combined_paramd_df.txt"),sep="\t")
+
 # start one job per feature set size
-for(i in 1:length(params_integration$feature_set_sizes)){
+for(i in 1:nrow(total_param_df)){
 
   # require param df
   require(magrittr)
-  # read scvi params from json
-  scVI_fullarg_list = jsonlite::read_json("data/parameters_scvi_1.json")
-  scVI_fullarg_list$n_latent = params_integration$latent_space_sizes
-  # make a param data frame
-  scvi_full_param_df = scVI_fullarg_list %>% purrr::cross_df()
-  #subsample to random subset
-  if(nrow(scvi_full_param_df) > as.numeric(params_integration$scvi_models_to_test)){
-    set.seed(params_integration$global_seed)
-    param_df_random = scvi_full_param_df[sample(nrow(scvi_full_param_df),params_integration$scvi_models_to_test),]
-  }else{
-    param_df_random = scvi_full_param_df
-  }
+
+  #scVI_fullarg_list$n_latent = params_integration$latent_space_sizes
+  param_df_run = total_param_df[i,,drop=FALSE]
+
   # save this to the jobfile and use in job
-  param_df_id=digest::digest(param_df_random)
-  data.table::fwrite(param_df_random,paste0(param_path,param_df_id,"paramd_df.txt"),sep="\t")
+  param_df_id=digest::digest(param_df_run)
+  data.table::fwrite(param_df_run,paste0(param_path,param_df_id,"paramd_df.txt"),sep="\t")
 
   # set parameters for current dataset
   param_set = params_integration
-  param_set$feature_set_size = params_integration$feature_set_sizes[i]
+  param_set$feature_set_size = param_df_run$feature_set_sizes
   param_set$output_folder = integration_scvi_folder
   param_set$data_filepath_full = paste0(params_integration$integration_folder_path,param_set$new_name_suffix,".h5ad")
   param_set$feature_set_file = paste0(params_integration$integration_folder_path,"features/feature_sets.json")
-  param_set$hvgs_set_name = paste0(params_integration$assay_name,".log.", "vst", ".split_", params_integration$batch_var, ".features.",params_integration$feature_set_sizes[i])
+  param_set$hvgs_set_name = paste0(params_integration$assay_name,".log.", "vst", ".split_", params_integration$batch_var, ".features.",param_set$feature_set_size)
   param_set$categorical_covariates = c("Dataset",param_set$batch_var) #character(0) # c("inferred_sex"), # need to pass batch var here !
   param_set$continuous_covariates =character(0)
   param_set$use_cuda =FALSE
@@ -201,7 +213,7 @@ for(i in 1:length(params_integration$feature_set_sizes)){
   # execute job
   script_path = "python/run_scVI_v015.py"
   # set sbatch params:
-  jobname = paste0("integration_scvi_", params_integration$feature_set_sizes[i],"_",job_id)
+  jobname = paste0("integration_scvi_", param_set$feature_set_size,"_",job_id)
   outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
   errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
   dependency_ids = c(slurm_id_0,slurm_id_1)

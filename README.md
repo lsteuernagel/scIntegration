@@ -14,7 +14,7 @@ Key steps involve:
 - Preparation of files, feature sets  via [Seurat](https://satijalab.org/seurat/) 
 - Prepare the evaluation basis using short signatures of well-defined marker genes to objectively identify 'ground-truth' cell types across batches
 - Running PCA via [Seurat](https://satijalab.org/seurat/) and saving the integrated low dimensional embeddings 
-- Running scVI[scVI](https://scvi-tools.org/) and saving the integrated low dimensional embeddings 
+- Running [scVI](https://scvi-tools.org/) and saving the integrated low dimensional embeddings 
 - Evaluating the resulting methods using 4 approaches:
   - kNN based mixing: entropy of dataset distribution of neighbors per cell
   - kNN based purity: percentage of neighbors annotated with the same cell type per cell

@@ -13,7 +13,7 @@ param_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_par
 log_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_slurmlogs/"
 
 # load json file with all other information
-params_integration = jsonlite::read_json("data/parameters_integration_v2_1.json")
+params_integration = jsonlite::read_json("data/parameters_integration_v2_3.json")
 # if some fields are lists --> unlist
 params_integration = lapply(params_integration,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
@@ -28,8 +28,10 @@ writeList_to_JSON = function (list_with_rows, filename){
 }
 
 # make folder:
-evaluation_folder = paste0(param_set$integration_folder_path,"evaluation/")
+evaluation_folder = paste0(params_integration$integration_folder_path,"evaluation/")
 system(paste0("mkdir -p ",paste0(evaluation_folder)))
+
+require(magrittr)
 
 ##########
 ### [6] Run evaluation: rf mixing
@@ -38,7 +40,7 @@ system(paste0("mkdir -p ",paste0(evaluation_folder)))
 files_per_batch = 10
 
 ## prepare mixing rf integration
-# evaluation_mixingrf_folder = paste0(param_set$integration_folder_path,"evaluation/mixing_rf/")
+# evaluation_mixingrf_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_rf/")
 # system(paste0("mkdir -p ",paste0(evaluation_mixingrf_folder)))
 evaluation_mixingrf_file = paste0(evaluation_folder,"all_mixing_rf.txt")
 dummy = data.frame(value=character(0),reduction=character(0))
@@ -46,7 +48,7 @@ data.table::fwrite(dummy,evaluation_mixingrf_file,sep = "\t")
 
 # A: Find which results to evaluate
 # Read all files with integration results
-all_integration_files=list.files(paste0(param_set$integration_folder_path,"integration/"),recursive = TRUE,pattern = ".txt")
+all_integration_files=list.files(paste0(params_integration$integration_folder_path,"integration/"),recursive = TRUE,pattern = ".txt")
 available_integrations= gsub(".txt","",all_integration_files)
 available_integrations = as.character(sapply(available_integrations,function(x){ strsplit(x,split = "/")[[1]][length(strsplit(x,split = "/")[[1]])]}))
 # read file with evaluation results
@@ -79,7 +81,7 @@ for(i in 1:length(cut_levels)){
   param_set$integration_names = integrations_to_evaluate[which(cut_values==cut_levels[i])]
   param_set$integration_res_path = paste0(param_set$integration_folder_path,"integration/")
   param_set$evaluation_file = evaluation_mixingrf_file
-  param_set$seurat_merged_metadata = paste0(parameter_list$integration_folder_path,param_set$new_name_suffix,"_metadata.txt")
+  param_set$seurat_merged_metadata = paste0(param_set$integration_folder_path,param_set$new_name_suffix,"_metadata.txt")
 
   # make unique id:
   job_id=digest::digest(param_set)
@@ -102,10 +104,10 @@ for(i in 1:length(cut_levels)){
 ### [7] Run evaluation: knn mixing
 ##########
 
-files_per_batch = 50
+files_per_batch = 30
 
 ## prepare mixing rf integration
-# evaluation_mixingknn_folder = paste0(param_set$integration_folder_path,"evaluation/mixing_knn/")
+# evaluation_mixingknn_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_knn/")
 # system(paste0("mkdir -p ",paste0(evaluation_mixingknn_folder)))
 evaluation_mixingknn_file = paste0(evaluation_folder,"all_mixing_knn.txt")
 dummy = data.frame(value=character(0),reduction=character(0))
@@ -113,7 +115,7 @@ data.table::fwrite(dummy,evaluation_mixingknn_file,sep = "\t")
 
 # A: Find which results to evaluate
 # Read all files with integration results
-all_integration_files=list.files(paste0(param_set$integration_folder_path,"integration/"),recursive = TRUE,pattern = ".txt")
+all_integration_files=list.files(paste0(params_integration$integration_folder_path,"integration/"),recursive = TRUE,pattern = ".txt")
 available_integrations= gsub(".txt","",all_integration_files)
 available_integrations = as.character(sapply(available_integrations,function(x){ strsplit(x,split = "/")[[1]][length(strsplit(x,split = "/")[[1]])]}))
 # read file with evaluation results
@@ -146,7 +148,7 @@ for(i in 1:length(cut_levels)){
   param_set$integration_names = integrations_to_evaluate[which(cut_values==cut_levels[i])]
   param_set$integration_res_path = paste0(param_set$integration_folder_path,"integration/")
   param_set$evaluation_file = evaluation_mixingknn_file
-  param_set$seurat_merged_metadata = paste0(parameter_list$integration_folder_path,param_set$new_name_suffix,"_metadata.txt")
+  param_set$seurat_merged_metadata = paste0(param_set$integration_folder_path,param_set$new_name_suffix,"_metadata.txt")
 
   # make unique id:
   job_id=digest::digest(param_set)
@@ -172,7 +174,7 @@ for(i in 1:length(cut_levels)){
 files_per_batch = 50
 
 ## prepare mixing rf integration
-# evaluation_purityknn_folder = paste0(param_set$integration_folder_path,"evaluation/mixing_knn/")
+# evaluation_purityknn_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_knn/")
 # system(paste0("mkdir -p ",paste0(evaluation_purityknn_folder)))
 evaluation_purityknn_file = paste0(evaluation_folder,"all_purity_knn.txt")
 dummy = data.frame(reduction=character(0),value=character(0),celltype=character(0))
@@ -180,7 +182,7 @@ data.table::fwrite(dummy,evaluation_purityknn_file,sep = "\t")
 
 # A: Find which results to evaluate
 # Read all files with integration results
-all_integration_files=list.files(paste0(param_set$integration_folder_path,"integration/"),recursive = TRUE,pattern = ".txt")
+all_integration_files=list.files(paste0(params_integration$integration_folder_path,"integration/"),recursive = TRUE,pattern = ".txt")
 available_integrations= gsub(".txt","",all_integration_files)
 available_integrations = as.character(sapply(available_integrations,function(x){ strsplit(x,split = "/")[[1]][length(strsplit(x,split = "/")[[1]])]}))
 # read file with evaluation results
@@ -213,7 +215,7 @@ for(i in 1:length(cut_levels)){
   param_set$integration_names = integrations_to_evaluate[which(cut_values==cut_levels[i])]
   param_set$integration_res_path = paste0(param_set$integration_folder_path,"integration/")
   param_set$evaluation_file = evaluation_purityknn_file
-  param_set$seurat_merged_metadata = paste0(parameter_list$integration_folder_path,param_set$new_name_suffix,"_metadata.txt")
+  param_set$seurat_merged_metadata = paste0(param_set$integration_folder_path,param_set$new_name_suffix,"_metadata.txt")
 
   # make unique id:
   job_id=digest::digest(param_set)
@@ -239,7 +241,7 @@ for(i in 1:length(cut_levels)){
 files_per_batch = 5
 
 ## prepare mixing rf integration
-# evaluation_purityasw_folder = paste0(param_set$integration_folder_path,"evaluation/mixing_knn/")
+# evaluation_purityasw_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_knn/")
 # system(paste0("mkdir -p ",paste0(evaluation_purityasw_folder)))
 evaluation_purityasw_file = paste0(evaluation_folder,"all_purity_asw.txt")
 dummy = data.frame(reduction=character(0),
@@ -253,7 +255,7 @@ data.table::fwrite(dummy,evaluation_purityasw_file,sep = "\t")
 
 # A: Find which results to evaluate
 # Read all files with integration results
-all_integration_files=list.files(paste0(param_set$integration_folder_path,"integration/"),recursive = TRUE,pattern = ".txt")
+all_integration_files=list.files(paste0(params_integration$integration_folder_path,"integration/"),recursive = TRUE,pattern = ".txt")
 available_integrations= gsub(".txt","",all_integration_files)
 available_integrations = as.character(sapply(available_integrations,function(x){ strsplit(x,split = "/")[[1]][length(strsplit(x,split = "/")[[1]])]}))
 # read file with evaluation results
@@ -286,7 +288,7 @@ for(i in 1:length(cut_levels)){
   param_set$integration_names = integrations_to_evaluate[which(cut_values==cut_levels[i])]
   param_set$integration_res_path = paste0(param_set$integration_folder_path,"integration/")
   param_set$evaluation_file = evaluation_purityasw_file
-  param_set$merged_file_h5ad = paste0(parameter_list$integration_folder_path,param_set$new_name_suffix,".h5ad")
+  param_set$merged_file_h5ad = paste0(param_set$integration_folder_path,param_set$new_name_suffix,".h5ad")
 
   # make unique id:
   job_id=digest::digest(param_set)
