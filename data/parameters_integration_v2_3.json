@@ -32,6 +32,6 @@
   "dist_type": "cosine",
   "subset_cells": true,
   "target_clusterN": 200,
-  "start_res_asw": 5,
-  "end_res_asw": 15
+  "start_res_asw": 10,
+  "end_res_asw": 20
 }

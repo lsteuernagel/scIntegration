@@ -171,7 +171,7 @@ evaluate_purity_knn = function(seurat_object_metadata,integration_names,integrat
   output_df = as.data.frame(res_par_1) %>% dplyr::mutate(celltype = rownames(res_par_1)) %>% tidyr::gather(key="reduction",value="value",-celltype)
   # save updated files
   message("Saving results to files.")
-  data.table::fwrite(as.data.frame(output_df),file = evaluation_file,sep =  "\t")
+  data.table::fwrite(as.data.frame(output_df),file = evaluation_file,sep =  "\t",append = TRUE)
 }
 
 ##########

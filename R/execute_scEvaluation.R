@@ -43,8 +43,10 @@ files_per_batch = 10
 # evaluation_mixingrf_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_rf/")
 # system(paste0("mkdir -p ",paste0(evaluation_mixingrf_folder)))
 evaluation_mixingrf_file = paste0(evaluation_folder,"all_mixing_rf.txt")
-dummy = data.frame(value=character(0),reduction=character(0))
-data.table::fwrite(dummy,evaluation_mixingrf_file,sep = "\t")
+if(!file.exists(evaluation_mixingrf_file)){
+  dummy = data.frame(value=character(0),reduction=character(0))
+  data.table::fwrite(dummy,evaluation_mixingrf_file,sep = "\t")
+}
 
 # A: Find which results to evaluate
 # Read all files with integration results
@@ -109,9 +111,12 @@ files_per_batch = 30
 ## prepare mixing rf integration
 # evaluation_mixingknn_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_knn/")
 # system(paste0("mkdir -p ",paste0(evaluation_mixingknn_folder)))
+
 evaluation_mixingknn_file = paste0(evaluation_folder,"all_mixing_knn.txt")
-dummy = data.frame(value=character(0),reduction=character(0))
-data.table::fwrite(dummy,evaluation_mixingknn_file,sep = "\t")
+if(!file.exists(evaluation_mixingknn_file)){
+  dummy = data.frame(value=character(0),reduction=character(0))
+  data.table::fwrite(dummy,evaluation_mixingknn_file,sep = "\t")
+}
 
 # A: Find which results to evaluate
 # Read all files with integration results
@@ -171,14 +176,16 @@ for(i in 1:length(cut_levels)){
 ### [8] Run evaluation: knn purity
 ##########
 
-files_per_batch = 50
+files_per_batch = 30
 
 ## prepare mixing rf integration
 # evaluation_purityknn_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_knn/")
 # system(paste0("mkdir -p ",paste0(evaluation_purityknn_folder)))
 evaluation_purityknn_file = paste0(evaluation_folder,"all_purity_knn.txt")
-dummy = data.frame(reduction=character(0),value=character(0),celltype=character(0))
-data.table::fwrite(dummy,evaluation_purityknn_file,sep = "\t")
+if(!file.exists(evaluation_purityknn_file)){
+  dummy = data.frame(reduction=character(0),value=character(0),celltype=character(0))
+  data.table::fwrite(dummy,evaluation_purityknn_file,sep = "\t")
+}
 
 # A: Find which results to evaluate
 # Read all files with integration results
@@ -238,20 +245,22 @@ for(i in 1:length(cut_levels)){
 ### [9] Run evaluation: asw
 ##########
 
-files_per_batch = 5
+files_per_batch = 10
 
 ## prepare mixing rf integration
 # evaluation_purityasw_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_knn/")
 # system(paste0("mkdir -p ",paste0(evaluation_purityasw_folder)))
 evaluation_purityasw_file = paste0(evaluation_folder,"all_purity_asw.txt")
-dummy = data.frame(reduction=character(0),
-                   resolution=character(0),
-                   n_clusters=character(0),
-                   silhouette_score_euclidean=character(0),
-                   silhouette_score_cosine=character(0),
-                   calinski_harabasz=character(0),
-                   davies_bouldin=character(0))
-data.table::fwrite(dummy,evaluation_purityasw_file,sep = "\t")
+if(!file.exists(evaluation_purityasw_file)){
+  dummy = data.frame(reduction=character(0),
+                     resolution=character(0),
+                     n_clusters=character(0),
+                     silhouette_score_euclidean=character(0),
+                     silhouette_score_cosine=character(0),
+                     calinski_harabasz=character(0),
+                     davies_bouldin=character(0))
+  data.table::fwrite(dummy,evaluation_purityasw_file,sep = "\t")
+}
 
 # A: Find which results to evaluate
 # Read all files with integration results
