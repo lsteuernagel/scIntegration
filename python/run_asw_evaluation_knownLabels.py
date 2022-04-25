@@ -31,7 +31,6 @@ json_str = json_file.read()
 parameter_dict = json.loads(json_str)
 
 # general params from dict (could also save these lines, but I think this way it is easier to digest)
-batch=parameter_dict["batch_var"]
 integration_folder_path = parameter_dict["integration_folder_path"]
 merged_file_h5ad = parameter_dict["merged_file_h5ad"]
 integration_results_path = parameter_dict["integration_res_path"]
@@ -39,13 +38,8 @@ evaluation_file = parameter_dict["evaluation_file"]
 evaluation_file_grouped = parameter_dict["evaluation_file_grouped"] 
 global_seed = parameter_dict["global_seed"]
 embedding_names = parameter_dict["integration_names"]
-target_clusterN = parameter_dict["target_clusterN"]
 label_file_name = parameter_dict["label_file_name"] 
-subset_cells = parameter_dict["subset_cells"] 
 job_id = parameter_dict["job_id"]
-start_res = parameter_dict["start_res_asw"]
-end_res = parameter_dict["end_res_asw"]
-n_neighbors = parameter_dict["k_param"]
 
 print("Read anndata.")
 
