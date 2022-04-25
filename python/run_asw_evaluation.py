@@ -6,6 +6,7 @@ import louvain
 import igraph
 import re
 import sklearn
+import sklearn.metrics
 import os
 import sys
 import json
