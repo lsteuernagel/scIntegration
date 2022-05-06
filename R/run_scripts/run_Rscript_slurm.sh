@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --time=240:00:00
-#SBATCH --cpus-per-task=40
-#SBATCH --partition=blade-a
+#SBATCH --cpus-per-task=50
+#SBATCH --partition=blade-b
 
 # need to get 3 variables from call
 # singularity image

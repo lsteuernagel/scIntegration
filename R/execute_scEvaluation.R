@@ -13,7 +13,7 @@ param_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_par
 log_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_slurmlogs/"
 
 # load json file with all other information
-params_integration = jsonlite::read_json("data/parameters_integration_v2_3.json")
+params_integration = jsonlite::read_json("data/parameters_integration_v2_neurons_1.json")
 # if some fields are lists --> unlist
 params_integration = lapply(params_integration,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
@@ -37,7 +37,7 @@ require(magrittr)
 ### [6] Run evaluation: rf mixing
 ##########
 
-files_per_batch = 10
+files_per_batch = 5
 
 ## prepare mixing rf integration
 # evaluation_mixingrf_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_rf/")
@@ -176,14 +176,14 @@ for(i in 1:length(cut_levels)){
 ### [8] Run evaluation: knn purity
 ##########
 
-files_per_batch = 30
+files_per_batch = 25
 
 ## prepare mixing rf integration
 # evaluation_purityknn_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_knn/")
 # system(paste0("mkdir -p ",paste0(evaluation_purityknn_folder)))
 evaluation_purityknn_file = paste0(evaluation_folder,"all_purity_knn.txt")
 if(!file.exists(evaluation_purityknn_file)){
-  dummy = data.frame(reduction=character(0),value=character(0),celltype=character(0))
+  dummy = data.frame(celltype=character(0),reduction=character(0),value=character(0))
   data.table::fwrite(dummy,evaluation_purityknn_file,sep = "\t")
 }
 
@@ -245,20 +245,20 @@ for(i in 1:length(cut_levels)){
 ### [9] Run evaluation: asw
 ##########
 
-files_per_batch = 10
+files_per_batch = 25
 
 ## prepare mixing rf integration
 # evaluation_purityasw_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_knn/")
 # system(paste0("mkdir -p ",paste0(evaluation_purityasw_folder)))
 evaluation_purityasw_file = paste0(evaluation_folder,"all_purity_asw.txt")
 if(!file.exists(evaluation_purityasw_file)){
-  dummy = data.frame(reduction=character(0),
-                     resolution=character(0),
+  dummy = data.frame(resolution=character(0),
                      n_clusters=character(0),
                      silhouette_score_euclidean=character(0),
                      silhouette_score_cosine=character(0),
                      calinski_harabasz=character(0),
-                     davies_bouldin=character(0))
+                     davies_bouldin=character(0),
+                     reduction=character(0))
   data.table::fwrite(dummy,evaluation_purityasw_file,sep = "\t")
 }
 

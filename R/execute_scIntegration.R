@@ -13,7 +13,7 @@ param_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_par
 log_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_slurmlogs/"
 
 # load json file with all other information
-params_integration = jsonlite::read_json("data/parameters_integration_v2_3.json")
+params_integration = jsonlite::read_json("data/parameters_integration_v2_neurons_1.json")
 # if some fields are lists --> unlist
 params_integration = lapply(params_integration,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
@@ -161,7 +161,7 @@ system(paste0("mkdir -p ",paste0(integration_scvi_folder)))
 slurm_id_5_per_size = vector()
 
 # read scvi params from json
-scVI_fullarg_list = jsonlite::read_json("data/parameters_scvi_3.json")
+scVI_fullarg_list = jsonlite::read_json("data/parameters_scvi_neurons_2.json")
 # make a param data frame
 scvi_full_param_df = scVI_fullarg_list %>% purrr::cross_df()
 #subsample to random subset

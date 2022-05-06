@@ -4,17 +4,19 @@
 param_list = list()
 
 # must be loaded from params:
-param_list$integration_folder_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_integration/"
+param_list$integration_folder_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_neurons_integration/"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_integration/"
 #param_list$processed_suffix = "_seurat_processed"
 
 # for final merged object:
-param_list$merged_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
-param_list$new_name_suffix = "hypoMap_integrated"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
+param_list$merged_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_neurons_integration/hypoMap_neurons.rds"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
+param_list$new_name_suffix = "hypoMap_neurons_integrated"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
 
 # signature for evaluation
-param_list$celltype_signature_file = "data/hypothalamus_celltype_signatures.json"
-param_list$auc_backup_file = "data/hypoMap_celltype_auc_per_cell_result.txt"
+param_list$celltype_signature_file = "data/hypothalamus_neuron_only_signatures.json"
 param_list$genes_to_exclude_file = "data/features_exclude_list.json"
+
+#where to save auc
+param_list$auc_backup_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_neurons_integration/hypoMap_celltype_auc_per_cell_result.txt"
 
 # general
 param_list$n_cores = 50
@@ -22,7 +24,7 @@ param_list$id_column = "Cell_ID"
 param_list$global_seed = 123456
 param_list$sample_column = "Sample_ID"
 param_list$batch_var = "Batch_ID"
-param_list$feature_set_sizes = c(750,1000,1250,1500,2000,2500,3000)
+param_list$feature_set_sizes = c(750,1000,1500,2000,2500,3000) # 1250
 param_list$assay_name = "RNA"
 
 # aucell
@@ -37,7 +39,7 @@ param_list$detected_cells_filename="detected_celltypes.json"
 
 # downsample
 param_list$id_file_name = "downsampled_ids_for_evaluation.json"
-param_list$target_sub_sample = 38700
+param_list$target_sub_sample = 30000
 param_list$stepsize = 200
 
 # integration
@@ -52,9 +54,9 @@ param_list$k_param = 20
 param_list$dist_type = "cosine"
 ## asw
 param_list$subset_cells = TRUE
-param_list$target_clusterN = 200
+param_list$target_clusterN = 170
 param_list$start_res_asw = 5
 param_list$end_res_asw = 15
 
 # save
-scUtils::writeList_to_JSON(param_list,filename = "data/parameters_integration_v2_3.json")
+scUtils::writeList_to_JSON(param_list,filename = "data/parameters_integration_v2_neurons_1.json")
