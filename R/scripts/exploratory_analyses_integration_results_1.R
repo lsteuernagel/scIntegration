@@ -17,6 +17,13 @@ integration_file_name = "scVI_1_400_0.1_2_256_gene_zinb_cov2..scVI..85..RNA.log.
 ## good knn mixing and purity withd decent asw:
 integration_file_name = "scVI_1_400_0.1_2_256_gene_zinb_cov2..scVI..85..RNA.log.vst.split_Batch_ID.features.2000_5e31aa323c46e0fb15d6f94afc210cce.txt"
 
+#
+integration_file_name = "scVI_1_400_0.1_2_256_gene_zinb_cov2..scVI..85..RNA.log.vst.split_Batch_ID.features.2000_5e31aa323c46e0fb15d6f94afc210cce.txt"
+
+integration_file_name = "scVI_1_400_0.1_2_256_gene_zinb_cov2..scVI..85..RNA.log.vst.split_Batch_ID.features.2000_5e31aa323c46e0fb15d6f94afc210cce.txt"
+
+integration_file_name = "scVI_0_300_0.1_3_256_gene_zinb_cov2..scVI..65..RNA.log.vst.split_Batch_ID.features.3000_5a67c718bb47fffe6e6c8b87f9d1b722.txt"
+
 new_name = gsub(".txt","",integration_file_name )#"scvi"
 
 # load seurat
@@ -125,6 +132,10 @@ p3r
 #data.table::fwrite(hypoMap_seurat_meta[,c("Cell_ID","SNN_scvi_res.10")],"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/hypoMap_v2_perliminary_clusters_290422.tsv",sep="\t")
 
 hypoMap_seurat_meta = hypoMap_seurat@meta.data
+
+hypoMap_seurat_meta = hypoMap_seurat@meta.data[,1:33]
+hypoMap_seurat_meta = dplyr::left_join(hypoMap_seurat_meta, hypoMap_v2_perliminary_clusters[,c("Cell_ID","SNN_scvi_res.10")],by=c("Cell_ID"="Cell_ID"))
+hypoMap_seurat_meta$seurat_clusters = as.character(hypoMap_seurat_meta$SNN_scvi_res.10)
 hypoMap_seurat_meta$Author_Class[hypoMap_seurat_meta$Author_Class=="Vascular"] ="Endothelial"
 hypoMap_seurat_meta$Author_Class[hypoMap_seurat_meta$Author_Class %in% c("Unassigned","Mixed")] = NA
 class_per_cluster = hypoMap_seurat_meta %>% dplyr::group_by(seurat_clusters) %>% dplyr::add_count(name="cluster_total") %>%
@@ -139,8 +150,9 @@ class_per_cluster_top = class_per_cluster %>% dplyr::group_by(seurat_clusters)  
 class_per_cluster_top$Author_Class_Curated = class_per_cluster_top$Author_Class
 class_per_cluster_top$Author_Class_Curated[class_per_cluster_top$fraction_of_annotated < 0.67] = "Unknown"
 class_per_cluster_top$Author_Class_Curated[class_per_cluster_top$fraction_of_annotated < 0.8 & class_per_cluster_top$annotated_pct < 10] = "Unknown"
+#class_per_cluster_top$seurat_clusters= as.factor(class_per_cluster_top$seurat_clusters)
 
-temp_meta = dplyr::left_join(hypoMap_seurat@meta.data[,1:37],class_per_cluster_top[,c("seurat_clusters","Author_Class_Curated")],by=c("seurat_clusters"="seurat_clusters"))
+temp_meta = dplyr::left_join(hypoMap_seurat_meta,class_per_cluster_top[,c("seurat_clusters","Author_Class_Curated")],by=c("seurat_clusters"="seurat_clusters"))
 rownames(temp_meta) = temp_meta$Cell_ID
 temp_meta$Author_Class_Curated[is.na(temp_meta$Author_Class_Curated)] ="Unknown"
 hypoMap_seurat@meta.data = temp_meta
@@ -241,6 +253,7 @@ p3r = scUtils::rasterize_ggplot(p3,pixel_raster = 2048)
 p3r
 
 #data.table::fwrite(hypoMap_seurat_meta[,c("Cell_ID","SNN_scvi_res.10","Author_Class_Curated")],"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/hypoMap_v2_perliminary_clusters_290422.tsv",sep="\t")
+#data.table::fwrite(hypoMap_seurat@meta.data %>% dplyr::select(Cell_ID,SNN_scvi_res.10=seurat_clusters,Author_Class_Curated),"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/hypoMap_v2_preliminary_clusters_090522.tsv",sep="\t")
 
 ########## export
 v2_neurons_folder ="/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_neurons_integration/"

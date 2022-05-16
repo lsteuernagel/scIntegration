@@ -245,7 +245,7 @@ for(i in 1:length(cut_levels)){
 ### [9] Run evaluation: asw
 ##########
 
-files_per_batch = 25
+files_per_batch = 8
 
 ## prepare mixing rf integration
 # evaluation_purityasw_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_knn/")

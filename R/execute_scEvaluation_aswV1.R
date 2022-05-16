@@ -79,7 +79,7 @@ print(output_message)
 ##########
 
 # this file is custom made: col1: Cell_ID, col2: label
-label_folder ="/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/cell_labels/"
+#label_folder ="/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/cell_labels/"
 label_folder ="/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_neurons_integration/cell_labels/"
 label_file_names = list.files(label_folder)
 
