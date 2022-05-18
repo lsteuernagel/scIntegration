@@ -53,66 +53,124 @@ load_evaluation_results_withSCVI = function(param_file,evaluation_folder = paste
 
 
 ##########
-###  run basic comaprison neurons
+###  results from asw per dataset function
 ##########
 
 
 # all_K169_asw_v1 = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_integration/evaluation/all_K169_asw.txt",data.table = F)
 # grouped_K169_asw_v1 = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_integration/evaluation/grouped_K169_asw.txt",data.table = F)
 
-##########
-### Read results
-##########
+load_evaluation_results_dataset_asw = function(param_file,evaluation_folder = paste0(params_integration$integration_folder_path,"evaluation/"),type="all",clean=TRUE){
+  # or type = "grouped"
 
-all_eval_files = list.files(folder_for_v1_evaluation,pattern="all")
-all_eval_files = all_eval_files[grepl("_AuthorCellTypes",all_eval_files)]
-table_list = list()
-for(i in 1:length(all_eval_files)){
-  label = gsub("_AuthorCellTypes.csv","",all_eval_files[[i]])
-  table_list[[label]] = data.table::fread(paste0(folder_for_v1_evaluation,all_eval_files[[i]]))
-  table_list[[label]]$Dataset = label
+  params_integration = jsonlite::read_json(param_file)
+  all_eval_files = list.files(evaluation_folder,pattern=type)
+  if(clean){
+    all_eval_files = all_eval_files[grepl("_AuthorCellTypes",all_eval_files)]
+  }
+  table_list = list()
+  for(i in 1:length(all_eval_files)){
+    label = gsub("_AuthorCellTypes.csv","",all_eval_files[[i]])
+    table_list[[label]] = data.table::fread(paste0(evaluation_folder,all_eval_files[[i]]))
+    table_list[[label]]$Dataset = label
+  }
+
+  all_asw_results = do.call(rbind,table_list)
+
+  if(type=="grouped"){colnames(all_asw_results)[1:4] = c("reduction","celltype","asw_euclidean","asw_cosine")}else{colnames(all_asw_results)[1:3] = c("reduction","asw_euclidean","asw_cosine")}
+  return(all_asw_results)
 }
-
-a1 = do.call(rbind,table_list)
-
-all_eval_files = list.files(folder_for_v1_evaluation,pattern="grouped")
-all_eval_files = all_eval_files[grepl("_AuthorCellTypes",all_eval_files)]
-table_list = list()
-for(i in 1:length(all_eval_files)){
-  label = gsub("_AuthorCellTypes.csv","",all_eval_files[[i]])
-  table_list[[label]] = data.table::fread(paste0(folder_for_v1_evaluation,all_eval_files[[i]]))
-  table_list[[label]]$Dataset = label
-}
-
-a2 = do.call(rbind,table_list)
-colnames(a2) = c("reduction","celltype","asw_eulid","asw_cosine","dataset")
-
-a2_wide = a2 %>% dplyr::select(-asw_cosine) %>% tidyr::spread(key="reduction",value="asw_eulid")
-colnames(a2_wide)
-ggplot(a2_wide,aes(x=scvi_hypoMap_v1,y=scvi_hypoMap_neurons_v1,color=dataset))+geom_point()+geom_abline(slope = 1)
 
 ##########
 ###  run basic comaprison neurons
 ##########
 
-
+# use only these cell types for üurity knn:
 cell_types_to_include = c('Agrp_Acvr1c','Fst_Fezf2','Ghrh_Mbnl3','Gnrh1_Gng8','Gpr50_Pgr15l','Hcrt_Rfx4','Lef1_Wif1','Npw_Nkx24','Ntrk1_Chat','Omp_Sim2','Oxt_Avp','Pirt_Tbx19','Pmch_Parpbp','Pomc_Anxa2','Pomc_Ttr','Prph_Hdc','Qrfp_Car8','Shox2_Gbx2','Slc6a3_Rxfp2','Sln_Ctxn3','Tac2_Kiss1','Ttn_Foxb1','Vip_Grp','Vip_Nov')
 
+# load
 all_evaluation_results_full = load_evaluation_results_withSCVI(param_file = "data/parameters_integration_v2_3.json",cell_types_purity=cell_types_to_include)
 all_evaluation_results_neurons = load_evaluation_results_withSCVI(param_file = "data/parameters_integration_v2_neurons_1.json",cell_types_purity=cell_types_to_include)
 
+### check on others
+per_dataset_asw_full_all = load_evaluation_results_dataset_asw(param_file = "data/parameters_integration_v2_3.json")
+per_dataset_asw_full_grouped = load_evaluation_results_dataset_asw(param_file = "data/parameters_integration_v2_3.json",type = "grouped")
+per_dataset_asw_neurons_all = load_evaluation_results_dataset_asw(param_file = "data/parameters_integration_v2_neurons_1.json")
+per_dataset_asw_neurons_grouped = load_evaluation_results_dataset_asw(param_file = "data/parameters_integration_v2_neurons_1.json",type = "grouped")
 
-compare_eval = dplyr::full_join(all_evaluation_results_full,all_evaluation_results_neurons,suffix=c("_full","_neuron"),by=c("ndim" = "ndim", "features_ngenes" = "features_ngenes", "scvi_params"= "scvi_params"))
+## use grouped data and subset full to same ones as neuron:
+per_dataset_asw_full_grouped_subset = per_dataset_asw_full_grouped[per_dataset_asw_full_grouped$celltype %in% unique(per_dataset_asw_neurons_grouped$celltype),]
+
+# make per reduction summaries:
+per_dataset_asw_full_grouped_subset_summary = per_dataset_asw_full_grouped_subset %>% dplyr::group_by(reduction) %>% dplyr::summarise(mean_asw_dataset_celltype = mean(asw_euclidean))
+per_dataset_asw_neurons_grouped_summary = per_dataset_asw_neurons_grouped %>% dplyr::group_by(reduction) %>% dplyr::summarise(mean_asw_dataset_celltype = mean(asw_euclidean))
+
+# add other data
+all_evaluation_results_full = dplyr::left_join(all_evaluation_results_full,per_dataset_asw_full_grouped_subset_summary,by="reduction")
+all_evaluation_results_neurons = dplyr::left_join(all_evaluation_results_neurons,per_dataset_asw_neurons_grouped_summary,by="reduction")
+
+# join everything:
+compare_eval = dplyr::full_join(all_evaluation_results_full,all_evaluation_results_neurons[!grepl("fromFull",all_evaluation_results_neurons$reduction),],suffix=c("_full","_neuron"),by=c("ndim" = "ndim", "features_ngenes" = "features_ngenes", "scvi_params"= "scvi_params"))
 compare_eval2 = compare_eval[compare_eval$method_full=="scVI" & !is.na(compare_eval$reduction_full) & !is.na(compare_eval$reduction_neuron),]
 
-### check on others
+combine_eval = dplyr::bind_rows(all_evaluation_results_full %>% dplyr::mutate(source="full") , all_evaluation_results_neurons[!grepl("fromFull",all_evaluation_results_neurons$reduction),] %>% dplyr::mutate(source="neuron"))
+colnames(combine_eval)
 
-# define file names
-evaluation_folder = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_neurons_integration/evaluation/"
-label_name = "Affinati10x_AuthorCellTypes.csv"
-evaluation_knownLabel_asw_file = paste0(evaluation_folder,label_name,"_AuthorCellType_all_asw.txt")
-evaluation_knownLabel_asw_grouped_file = paste0(evaluation_folder,label_name,"_AuthorCellType_grouped_asw.txt")
+### show all together:
+require(ggplot2)
+ggplot2::ggplot(combine_eval %>% dplyr::filter(method == "scVI") ,aes(mixingknn,mean_knn_purity,size = asw,color=source))+geom_point()#+geom_abline(slope = 1)
 
-evaluation_knownLabel_asw = data.table::fread(evaluation_knownLabel_asw_file,data.table = F)
+
+ggplot2::ggplot(combine_eval %>% dplyr::filter(method == "scVI") ,aes(mixingknn, mean_knn_purity ,size = mean_asw_dataset_celltype,color=source))+geom_point()#+geom_abline(slope = 1)
+
+
+## plot features_ngenes
+plot_df = combine_eval[combine_eval$method=="scVI" & combine_eval$features_ngenes != 1250,]
+plot_df$features_ngenes= factor(plot_df$features_ngenes,levels = as.character(sort(as.numeric(unique(plot_df$features_ngenes)))))
+p_asw_nfeatures = ggplot(plot_df, aes(x=features_ngenes, y=asw)) +
+  geom_boxplot(aes(fill=source)) +
+  geom_point(position=position_dodge(width=0.75),aes(group=source))+theme(text=element_text(size = 20))
+p_asw_nfeatures
+
+p_knnpurity_nfeatures = ggplot(plot_df, aes(x=features_ngenes, y=mean_knn_purity)) +
+  geom_boxplot(aes(fill=source)) +
+  geom_point(position=position_dodge(width=0.75),aes(group=source))+theme(text=element_text(size = 20))
+p_knnpurity_nfeatures
+
+p_mixingknn_nfeatures = ggplot(plot_df, aes(x=features_ngenes, y=mixingknn)) +
+  geom_boxplot(aes(fill=source)) +
+  geom_point(position=position_dodge(width=0.75),aes(group=source))
+p_mixingknn_nfeatures
+
+##########
+###  run basic comaprison neurons with full evaluation subset to neurons !
+##########
+
+#### with fromFull
+all_evaluation_results_neurons$source = "neuron"
+all_evaluation_results_neurons$source[grepl("fromFull",all_evaluation_results_neurons$reduction)] = "full"
+
+ggplot2::ggplot(all_evaluation_results_neurons %>% dplyr::filter(method == "scVI") ,aes(mixingknn, mean_knn_purity ,size = asw,color=source))+
+  geom_point()+theme(text=element_text(size = 20))
+
+#ggplot2::ggplot(all_evaluation_results_neurons %>% dplyr::filter(method == "scVI"), aes(id,y=mixingknn,fill=source,group=source)) + geom_col( position = "dodge") + facet_wrap(~ features_ngenes)
+
+# subset
+onlyShared_versions = all_evaluation_results_neurons %>% dplyr::group_by(ndim,scvi_params,features_ngenes) %>% dplyr::add_count(name = "occurs_multiple") %>% dplyr::filter(occurs_multiple > 1)
+onlyShared_versions$id = paste0(onlyShared_versions$scvi_params,"_",onlyShared_versions$ndim,"_",onlyShared_versions$features_ngenes)
+# plot params
+ggplot2::ggplot(onlyShared_versions, aes(id,y=mixingknn,fill=source,group=source)) + geom_col( position = "dodge") + theme(axis.text.x = element_text(angle = 45, hjust=1,size=15),text = element_text(size=15))
+ggplot2::ggplot(onlyShared_versions, aes(id,y=mean_knn_purity,fill=source,group=source)) + geom_col( position = "dodge") + theme(axis.text.x = element_text(angle = 45, hjust=1,size=15),text = element_text(size=15))
+#ggplot2::ggplot(onlyShared_versions, aes(id,y=mean_asw_dataset_celltype,fill=source,group=source)) + geom_col( position = "dodge") + theme(axis.text.x = element_text(angle = 45, hjust=1,size=15),text = element_text(size=15))
+ggplot2::ggplot(onlyShared_versions, aes(id,y=asw,fill=source,group=source)) + geom_col( position = "dodge") + theme(axis.text.x = element_text(angle = 45, hjust=1,size=15),text = element_text(size=15))
+
+
+
+
+
+
+
+
+
 
 

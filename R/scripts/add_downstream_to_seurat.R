@@ -16,7 +16,7 @@ hypoMap_seurat = readRDS("/beegfs/scratch/bruening_scratch/lsteuernagel/data/hyp
 hypoMap_v2_preliminary_clusters = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/hypoMap_v2_preliminary_clusters_090522.tsv",data.table = F)
 
 # add
-temp_meta = dplyr::left_join(hypoMap_seurat@meta.data[,1:33],hypoMap_v2_preliminary_clusters],by=c("Cell_ID"="Cell_ID"))
+temp_meta = dplyr::left_join(hypoMap_seurat@meta.data[,1:33],hypoMap_v2_preliminary_clusters,by=c("Cell_ID"="Cell_ID"))
 rownames(temp_meta) = temp_meta$Cell_ID
 hypoMap_seurat@meta.data = temp_meta
 
@@ -37,7 +37,7 @@ hypoMap_seurat@reductions[[new_name]] = dimred
 
 # ready for plots:
 # plot
-p3= Seurat::DimPlot(hypoMap_seurat,group.by =  "Author_Class_Curated",raster = F,order = TRUE,shuffle = TRUE,reduction=paste0("umap_",new_name))#+NoLegend()#reduction=paste0("umap_",new_name)
+p3= Seurat::DimPlot(hypoMap_seurat,group.by =  "Author_Class_Curated",raster = F,order = TRUE,shuffle = TRUE,reduction=paste0(new_name))#+NoLegend()#reduction=paste0("umap_",new_name)
 p3r = scUtils::rasterize_ggplot(p3,pixel_raster = 2048)
 p3r
 

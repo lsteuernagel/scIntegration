@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --time=240:00:00
-#SBATCH --cpus-per-task=50
+#SBATCH --cpus-per-task=40
 #SBATCH --partition=blade-a
 
 # need to get 3 variables from call

@@ -88,6 +88,7 @@ read_embedding = function(filename_withpath,seurat_object=NULL,seurat_object_met
     rownames(current_embedding)=rnames
     # reorder to align with rest of object
     if(any(is.na(match(rownames(metadata),rownames(current_embedding))))){
+      message("Found ",length(rnames)," rows in embedding and ",length(rownames(metadata))," rows in metadata.")
       stop("Cell names from loaded reduction and new object are not matching exactly. Stopping import.")
     }
     current_embedding = current_embedding[match(rownames(metadata),rownames(current_embedding)),]

@@ -37,7 +37,7 @@ require(magrittr)
 ### [6] Run evaluation: rf mixing
 ##########
 
-files_per_batch = 5
+files_per_batch = 10
 
 ## prepare mixing rf integration
 # evaluation_mixingrf_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_rf/")
@@ -176,7 +176,7 @@ for(i in 1:length(cut_levels)){
 ### [8] Run evaluation: knn purity
 ##########
 
-files_per_batch = 25
+files_per_batch = 30
 
 ## prepare mixing rf integration
 # evaluation_purityknn_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_knn/")
@@ -245,7 +245,7 @@ for(i in 1:length(cut_levels)){
 ### [9] Run evaluation: asw
 ##########
 
-files_per_batch = 8
+files_per_batch = 10
 
 ## prepare mixing rf integration
 # evaluation_purityasw_folder = paste0(params_integration$integration_folder_path,"evaluation/mixing_knn/")

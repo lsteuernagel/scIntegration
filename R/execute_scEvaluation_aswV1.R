@@ -34,7 +34,7 @@ system(paste0("mkdir -p ",paste0(evaluation_folder)))
 require(magrittr)
 
 ##########
-### Run evaluation: asw
+### Run evaluation: asw with v1 labels
 ##########
 
 # this file is custom made: col1: Cell_ID, col2: label
@@ -75,7 +75,7 @@ output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",err
 print(output_message)
 
 ##########
-### Run evaluation: asw
+### Run evaluation: asw on dataset labels
 ##########
 
 # this file is custom made: col1: Cell_ID, col2: label
