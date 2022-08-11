@@ -92,11 +92,11 @@ The first parameters manage the input and put put files.
 
 ### Key Inputs to define
 
-**merged_file** points to a merged seurat object of all datasets that has to be build before running this pipeline. 
-**integration_folder_path** is the output directory for all intermediate and final results. This should be different for each project. 
-**celltype_signature_file** requires a json file with named gene lists that represent signatures of ground truth cell types used for evaluation
+-**merged_file** points to a merged seurat object of all datasets that has to be build before running this pipeline. 
+-**integration_folder_path** is the output directory for all intermediate and final results. This should be different for each project. 
+-**celltype_signature_file** requires a json file with named gene lists that represent signatures of ground truth cell types used for evaluation
 
 ### Other parameters descriptions (selected):
 
-**feature_set_sizes** Different numbers of highly variable features to test.
+-**feature_set_sizes** Different numbers of highly variable features to test.
 
