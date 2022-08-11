@@ -24,9 +24,9 @@ Key steps involve:
 
 Additionally the pipeline relies on the following R package: [scUtils](https://github.sf.mpg.de/lsteuernagel/scUtils) and some other minor dependencies.
 
-Most pipeline are executed via slurm jobs using a singularity image with all required dependencies that could fro example be pulled from a suitable [Docker image](https://hub.docker.com/r/lsteuernagel/r_scvi/tags).
+Most pipeline steps are executed via slurm jobs using a singularity or docker image (with all required dependencies) that can be pulled via dockerhub: [Docker image](https://hub.docker.com/r/lsteuernagel/r_scvi_v2/tags).
 
-The execution and queue management scripts are written in R as well and require some packages like digest (for hashing), magrittr and dplyr.
+The execution and queue management scripts are written in R and require some packages like digest (for hashing), magrittr and dplyr.
 
 # Step-by step 
 
@@ -88,10 +88,15 @@ It looks like this:
 }
 ```
 
+The first parameters manage the input and put put files.
 
-TODO:Extend and describe more details!
+### Key Inputs to define
 
-# On corrected counts
+**merged_file** points to a merged seurat object of all datasets that has to be build before running this pipeline. 
+**integration_folder_path** is the output directory for all intermediate and final results. This should be different for each project. 
+**celltype_signature_file** requires a json file with named gene lists that represent signatures of ground truth cell types used for evaluation
 
-TODO:
-Short comment
+### Other parameters descriptions (selected):
+
+**feature_set_sizes** Different numbers of highly variable features to test.
+
