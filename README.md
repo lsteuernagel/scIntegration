@@ -100,4 +100,16 @@ The first parameters manage the input and put put files.
 ### Other parameters descriptions (selected):
 
 - **feature_set_sizes** Different numbers of highly variable features to test.
+- **sample_column** column in meta.data of merged seurat object with sample level information
+- **batch_var** column in meta.data of merged seurat object with batch level information --> This will be the one that is used in the integration
+- **auc_max_rank, block_size, alpha, thrP, smallestPopPercent,auc_max_pos_thresh, auc_min_pos_thresh** various parameters for running AUC and then determining thresholds to define which cells are part of a cell type (for purity evaluation)
+- **target_sub_sample** some evaluation functions only use a subset of this size of the data
+- **scvi_models_to_test** the pipeline uses a "random search"-like approach where out of the grid of all parameter combinations only this many will be tested
+- **latent_space_sizes** scvi laten space sie parameters
+- **ntrees_mixing, sampsize_pct, max_for_norm** random forest evaluation related paramters.
+- **k_param** how many neighbors for nerighbor evaluation
+- **subset_cells**
+- **target_clusterN, start_res_asw, end_res_asw** ASW is calcualated on a set of preliminary clusters. To determine theses clusters we iterate over different leiden resolutions until target_clusterN is reached.
+
+
 
