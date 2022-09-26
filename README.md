@@ -5,9 +5,9 @@ Find optimal integration for a merged single cell dataset
 
 This repository contains a pipeline to integrate a merged single cell dataset using multiple methods and hyperparameter sets and evaluate the resulting integrated low dimensional embeddings with regard to their mixing of Batches / Samples / Datasets and purity of cell types.
 
-This package was designed to integrate the HypoMap data generated via this repository: [hypoMap_datasets](https://github.sf.mpg.de/lsteuernagel/hypoMap_datasets)
+This package was designed to integrate the HypoMap data.
 
-After finding good hyperparameters for integrating the data, the: [scHarmonization](https://github.sf.mpg.de/lsteuernagel/scHarmonization) pipeline can bu used to run downstream steps such as clustering and marker detection to create a fully harmonized and unified reference dataset such as HypoMap.
+After finding good hyperparameters for integrating the data, the: [scHarmonization](https://github.com/lsteuernagel/scHarmonization) pipeline can bu used to run downstream steps such as clustering and marker detection to create a fully harmonized and unified reference dataset such as HypoMap.
 
 Key steps involve:
 
